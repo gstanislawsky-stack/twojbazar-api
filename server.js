@@ -12,6 +12,13 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 
+const allowedOrigins = new Set([
+  "https://twojbazar.com",
+  "http://twojbazar.com",
+  "https://www.twojbazar.com",
+  "http://www.twojbazar.com",
+]);
+
 if (!process.env.OPENAI_API_KEY) {
   console.warn("Missing OPENAI_API_KEY. The AI endpoint will return an error until it is configured.");
 }
@@ -35,22 +42,66 @@ const upload = multer({
   },
 });
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin && allowedOrigins.has(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
+
+  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
 app.use(express.json());
 app.use(express.static(__dirname));
 
-app.post("/api/listings/generate-from-image", upload.single("image"), async (req, res) => {
+app.get("/", (_req, res) => {
+  res.type("text/plain").send("API działa");
+});
+
+async function handleGenerateDescription(req, res) {
   try {
     if (!process.env.OPENAI_API_KEY) {
+      console.error("[AI] Missing OPENAI_API_KEY");
+
       return res.status(500).json({
         error: "Server is missing OPENAI_API_KEY.",
       });
     }
 
     if (!req.file) {
+      console.error("[AI] Missing uploaded image");
+
       return res.status(400).json({
         error: "Image file is required.",
       });
     }
+
+    if (!req.file.buffer?.length) {
+      console.error("[AI] Uploaded file is empty", {
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+      });
+
+      return res.status(400).json({
+        error: "Uploaded image is empty.",
+      });
+    }
+
+    console.log("[AI] Received image upload", {
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      origin: req.headers.origin || "unknown",
+    });
 
     const base64Image = req.file.buffer.toString("base64");
     const imageDataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
@@ -109,6 +160,8 @@ app.post("/api/listings/generate-from-image", upload.single("image"), async (req
     const outputText = response.output_text;
 
     if (!outputText) {
+      console.error("[AI] Missing structured output from OpenAI response");
+
       return res.status(502).json({
         error: "OpenAI did not return structured output.",
       });
@@ -123,28 +176,48 @@ app.post("/api/listings/generate-from-image", upload.single("image"), async (req
       features: Array.isArray(parsed.features) ? parsed.features : [],
     });
   } catch (error) {
-    console.error("Image generation endpoint error:", error);
+    console.error("[AI] Image generation endpoint error", {
+      message: error?.message,
+      status: error?.status,
+      code: error?.code,
+      stack: error?.stack,
+    });
 
     return res.status(500).json({
       error: "Failed to generate listing data from image.",
     });
   }
-});
+}
+
+app.post("/api/generate-description", upload.single("image"), handleGenerateDescription);
+app.post("/api/listings/generate-from-image", upload.single("image"), handleGenerateDescription);
 
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError) {
+    console.error("[Upload] Multer error", {
+      code: error.code,
+      message: error.message,
+    });
+
     return res.status(400).json({
       error: error.message,
     });
   }
 
   if (error?.message === "Only image uploads are allowed.") {
+    console.error("[Upload] Invalid file type", {
+      message: error.message,
+    });
+
     return res.status(400).json({
       error: error.message,
     });
   }
 
-  console.error("Unhandled server error:", error);
+  console.error("[Server] Unhandled server error", {
+    message: error?.message,
+    stack: error?.stack,
+  });
 
   return res.status(500).json({
     error: "Unexpected server error.",
@@ -152,5 +225,5 @@ app.use((error, _req, res, _next) => {
 });
 
 app.listen(port, () => {
-  console.log(`TwojBazar server running at http://localhost:${port}`);
+  console.log(`TwojBazar server running on port ${port}`);
 });
