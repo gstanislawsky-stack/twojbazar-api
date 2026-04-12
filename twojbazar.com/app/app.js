@@ -58,6 +58,10 @@ const HOME_CATEGORY_SHORTCUTS = [
   { label: "Transport", value: "Transport", hint: "Przejazdy, przewozy i pomoc w trasie" },
 ];
 
+function getDefaultCountry() {
+  return COUNTRY_OPTIONS[0];
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -234,15 +238,15 @@ function getStoredProfile() {
 function getStoredCountryFilter() {
   try {
     const value = localStorage.getItem(COUNTRY_FILTER_STORAGE_KEY);
-    return value && (value === "all" || COUNTRY_OPTIONS.includes(value)) ? value : "all";
+    return value && COUNTRY_OPTIONS.includes(value) ? value : getDefaultCountry();
   } catch (error) {
     console.error("Country filter storage error:", error);
-    return "all";
+    return getDefaultCountry();
   }
 }
 
 function setStoredCountryFilter(country) {
-  const value = country === "all" || COUNTRY_OPTIONS.includes(country) ? country : "all";
+  const value = COUNTRY_OPTIONS.includes(country) ? country : getDefaultCountry();
   localStorage.setItem(COUNTRY_FILTER_STORAGE_KEY, value);
 }
 
@@ -262,15 +266,16 @@ function getListingImage(listing) {
   return Array.isArray(listing.images) && listing.images.length ? listing.images[0] : listing.image || "";
 }
 
-function renderHomeView(listings, query = "", country = "all", category = "all") {
+function renderHomeView(listings, query = "", country = getDefaultCountry(), category = "all") {
   const normalizedQuery = normalizeText(query);
-  const normalizedCountry = normalizeText(country);
+  const selectedCountry = COUNTRY_OPTIONS.includes(country) ? country : getDefaultCountry();
+  const normalizedCountry = normalizeText(selectedCountry);
   const normalizedCategory = normalizeText(category);
 
   const filtered = listings.filter((listing) => {
     const haystack = [listing.title, listing.category, listing.country, listing.city, listing.description].map(normalizeText);
     const matchesQuery = !normalizedQuery || haystack.some((entry) => entry.includes(normalizedQuery));
-    const matchesCountry = normalizedCountry === "all" || normalizeText(listing.country) === normalizedCountry;
+    const matchesCountry = normalizeText(listing.country) === normalizedCountry;
     const matchesCategory = normalizedCategory === "all" || normalizeText(listing.category).includes(normalizedCategory);
     return matchesQuery && matchesCountry && matchesCategory;
   });
@@ -306,11 +311,13 @@ function renderHomeView(listings, query = "", country = "all", category = "all")
         <label class="search-input-wrap" for="homeSearchInput">
           <input id="homeSearchInput" type="search" placeholder="Praca, pok\u00f3j, transport, formalno\u015bci..." value="${escapeHtml(query)}">
         </label>
-        <div class="chip-row">
-          <button class="nav-pill ${country === "all" ? "active" : ""}" type="button" data-country="all">Wszystkie</button>
+        <div class="country-filter-group">
+          <p class="filter-label">Wybierz kraj</p>
+          <div class="chip-row chip-row-countries">
           ${COUNTRY_OPTIONS.map((item) => `
             <button class="nav-pill ${normalizeText(item) === normalizedCountry ? "active" : ""}" type="button" data-country="${escapeHtml(item)}">${escapeHtml(item)}</button>
           `).join("")}
+          </div>
         </div>
       </div>
     </section>
@@ -365,12 +372,12 @@ function renderHomeView(listings, query = "", country = "all", category = "all")
   `;
 
   document.getElementById("homeSearchInput")?.addEventListener("input", (event) => {
-    renderHomeView(listings, event.target.value, country, category);
+    renderHomeView(listings, event.target.value, selectedCountry, category);
   });
 
   appMain.querySelectorAll("[data-country]").forEach((button) => {
     button.addEventListener("click", () => {
-      const nextCountry = button.dataset.country || "all";
+      const nextCountry = COUNTRY_OPTIONS.includes(button.dataset.country) ? button.dataset.country : getDefaultCountry();
       setStoredCountryFilter(nextCountry);
       renderHomeView(listings, query, nextCountry, category);
     });
@@ -378,7 +385,7 @@ function renderHomeView(listings, query = "", country = "all", category = "all")
 
   appMain.querySelectorAll("[data-category]").forEach((button) => {
     button.addEventListener("click", () => {
-      renderHomeView(listings, query, country, button.dataset.category || "all");
+      renderHomeView(listings, query, selectedCountry, button.dataset.category || "all");
     });
   });
 

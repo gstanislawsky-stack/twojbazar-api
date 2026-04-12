@@ -502,6 +502,24 @@ input[type="radio"] {
   padding-bottom: 2px;
 }
 
+.country-filter-group {
+  display: grid;
+  gap: 8px;
+}
+
+.filter-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.chip-row-countries {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .nav-pill {
   flex: 0 0 auto;
   display: inline-flex;
@@ -516,6 +534,13 @@ input[type="radio"] {
   font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+.chip-row-countries .nav-pill {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 10px;
+  text-align: center;
 }
 
 .nav-pill.active {
