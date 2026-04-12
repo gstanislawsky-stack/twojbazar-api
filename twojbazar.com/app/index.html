@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Twoj Bazar - mobilna wersja portalu og&#322;osze&#324; dla Polak&oacute;w w Skandynawii.">
+  <title>Twoj Bazar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-background" aria-hidden="true"></div>
+  <div class="app-shell">
+    <header class="app-topbar">
+      <button class="topbar-icon hidden" id="backButton" type="button" aria-label="Wr&oacute;&#263;">
+        <span aria-hidden="true">&#8592;</span>
+      </button>
+      <div class="topbar-brand">
+        <div class="brand-mark" aria-hidden="true">TB</div>
+        <div class="topbar-copy">
+          <h1 class="topbar-title" id="topbarTitle">Twoj Bazar</h1>
+        </div>
+      </div>
+      <button class="topbar-action" id="topbarAction" type="button" aria-label="Przejd&#378; do konta">
+        Konto
+      </button>
+    </header>
+
+    <main class="app-main" id="appMain" aria-live="polite"></main>
+
+    <nav class="app-bottom-nav" aria-label="Nawigacja g&#322;&oacute;wna">
+      <a class="bottom-nav-link active" data-route="home" href="#home">
+        <span>Start</span>
+      </a>
+      <a class="bottom-nav-link" data-route="add" href="#add">
+        <span>Dodaj</span>
+      </a>
+      <a class="bottom-nav-link" data-route="account" href="#account">
+        <span>Konto</span>
+      </a>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

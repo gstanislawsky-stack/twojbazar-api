@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Szczegóły ogłoszenia w TwojBazar.">
+  <title>Szczegóły ogłoszenia | TwojBazar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="navbar">
+      <a href="index.html#start" class="logo">
+        <span class="logo-mark">TB</span>
+        <span class="logo-text">TwojBazar</span>
+      </a>
+
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-label="Otwórz menu"
+        aria-expanded="false"
+        aria-controls="site-navigation"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="nav-links" id="site-navigation">
+        <a href="index.html#start">Start</a>
+        <a href="index.html#kategorie">Kategorie</a>
+        <a href="add-listing.html">Dodaj ogłoszenie</a>
+        <a href="index.html#kontakt">Kontakt</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="index.html#ogloszenia" class="nav-link-secondary">Przeglądaj</a>
+        <a href="add-listing.html" class="button button-primary button-nav">Dodaj ofertę</a>
+      </div>
+    </header>
+
+    <main class="subpage-main">
+      <section class="listing-details-layout" id="listingDetailsLayout">
+        <article class="form-panel listing-details-panel" id="listingDetailsPanel">
+          <span class="page-kicker">Szczegóły ogłoszenia</span>
+          <h1 class="page-title" id="listingTitle">Ładowanie ogłoszenia...</h1>
+          <p class="page-intro" id="listingIntro">Za chwilę pokażę pełne informacje o tej ofercie.</p>
+
+          <div class="listing-gallery" id="listingGallery">
+            <div class="listing-details-image" id="listingImageWrap">
+              <img id="listingImage" alt="Zdjęcie ogłoszenia" class="hidden">
+              <div class="listing-image-placeholder" id="listingImagePlaceholder">
+                <span>Brak zdjęcia</span>
+              </div>
+            </div>
+            <div class="listing-gallery-thumbs hidden" id="listingGalleryThumbs"></div>
+          </div>
+
+          <div class="listing-details-meta" id="listingMeta"></div>
+
+          <div class="listing-details-content">
+            <p class="price listing-details-price" id="listingPrice"></p>
+            <div class="listing-details-description" id="listingDescription"></div>
+          </div>
+        </article>
+
+        <aside class="info-panel listing-details-side" id="listingContactPanel">
+          <h2>Dane kontaktowe</h2>
+          <div class="listing-details-contact" id="listingContact"></div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2026 TwojBazar. Wszelkie prawa zastrzeżone.</p>
+    </footer>
+  </div>
+
+  <script src="listing.js"></script>
+</body>
+</html>
