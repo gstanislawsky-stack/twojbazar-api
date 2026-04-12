@@ -52,7 +52,8 @@ function normalizeString(value) {
 async function loadListings() {
   try {
     const raw = await fs.readFile(listingsFilePath, "utf8");
-    const parsed = JSON.parse(raw);
+    const safeRaw = raw.replace(/^\uFEFF/, "");
+    const parsed = JSON.parse(safeRaw);
     listings = Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     if (error?.code === "ENOENT") {
