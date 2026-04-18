@@ -30,13 +30,16 @@
       <nav class="nav-links" id="site-navigation">
         <a href="index.html#start">Start</a>
         <a href="index.html#kategorie">Kategorie</a>
-        <a href="add-listing.html">Dodaj ogłoszenie</a>
+        <a href="pomoc.html">Pomoc</a>
         <a href="index.html#kontakt">Kontakt</a>
       </nav>
 
+      <div class="navbar-cta">
+        <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
+      </div>
+
       <div class="nav-actions">
         <a href="index.html#ogloszenia" class="nav-link-secondary">Przeglądaj</a>
-        <a href="add-listing.html" class="button button-primary button-nav">Dodaj ofertę</a>
       </div>
     </header>
 
@@ -51,12 +54,13 @@
           </p>
 
           <form class="listing-form" id="addListingForm" novalidate>
-            <section class="ai-generator-panel" aria-labelledby="aiGeneratorTitle">
+            <section class="ai-generator-panel" id="ai-quick-start" aria-labelledby="aiGeneratorTitle">
               <div class="ai-generator-header">
                 <div>
                   <p class="ai-kicker">Asystent AI</p>
                   <h2 id="aiGeneratorTitle">Dodaj zdjęcie i uzupełnij ogłoszenie</h2>
                   <p class="ai-generator-intro">3 szybkie kroki: dodaj zdjęcie, uruchom AI i sprawdź wynik.</p>
+                  <p class="field-hint">Najszybsza ścieżka: zdjęcie, AI, szybka korekta i publikacja po uzupełnieniu kraju, miasta i kontaktu.</p>
                 </div>
               </div>
 
@@ -86,11 +90,18 @@
 
               <div class="form-field" data-field="image">
                 <label for="listingImage">Zdjęcie oferty</label>
-                <input id="listingImage" name="listingImage" type="file" accept="image/*" class="file-input-native">
-                <label for="listingImage" class="file-upload-ui">
-                  <span class="file-upload-trigger">📷 Wybierz zdjęcie</span>
-                  <span class="file-upload-status" id="imageFileStatus">Nie wybrano pliku</span>
-                </label>
+                <input id="listingImage" name="listingImage" type="file" accept="image/*" capture="environment" class="file-input-native">
+                <input id="listingImageGallery" name="listingImageGallery" type="file" accept="image/*" class="file-input-native">
+                <div class="file-upload-actions">
+                  <label for="listingImage" class="file-upload-ui" id="listingImageCameraTrigger">
+                    <span class="file-upload-trigger">📷 Zrób zdjęcie</span>
+                    <span class="file-upload-status">Aparat telefonu</span>
+                  </label>
+                  <label for="listingImageGallery" class="file-upload-ui" id="listingImageGalleryTrigger">
+                    <span class="file-upload-trigger">🖼️ Wybierz z galerii</span>
+                    <span class="file-upload-status" id="imageFileStatus">Nie wybrano pliku</span>
+                  </label>
+                </div>
                 <div class="image-preview hidden" id="imagePreview">
                   <img id="imagePreviewThumb" alt="Podgląd wybranego zdjęcia">
                   <button type="button" class="image-preview-remove" id="removeImageButton">Usuń zdjęcie</button>
@@ -146,8 +157,6 @@
                   <option value="Usługi szukam">Usługi szukam</option>
                   <option value="Sprzedam">Sprzedam</option>
                   <option value="Kupię">Kupię</option>
-                  <option value="Oddam">Oddam</option>
-                  <option value="Zamienię">Zamienię</option>
                   <option value="Transport">Transport</option>
                   <option value="Pomoc / formalności">Pomoc / formalności</option>
                   <option value="Poznam ludzi">Poznam ludzi</option>
@@ -169,9 +178,9 @@
                 <label for="country">Kraj</label>
                 <select id="country" name="country">
                   <option value="">Wybierz kraj</option>
-                  <option value="Sweden">Sweden</option>
-                  <option value="Norway">Norway</option>
-                  <option value="Denmark">Denmark</option>
+                  <option value="Szwecja">Szwecja</option>
+                  <option value="Norwegia">Norwegia</option>
+                  <option value="Dania">Dania</option>
                 </select>
                 <span class="field-error">Wybierz kraj ogłoszenia.</span>
               </div>

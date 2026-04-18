@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NAV w Norwegii - podstawowe informacje dla Polaków. Sprawdź, jak załatwić sprawy w urzędzie, czego potrzebujesz i gdzie znaleźć oficjalne informacje.">
+  <title>NAV w Norwegii - co zrobić krok po kroku | TwojBazar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="navbar">
+      <a href="index.html#start" class="logo">
+        <span class="logo-mark">TB</span>
+        <span class="logo-text">TwojBazar</span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-label="Otwórz menu" aria-expanded="false" aria-controls="site-navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="nav-links" id="site-navigation">
+        <a href="index.html#start">Start</a>
+        <a href="pomoc.html">Pomoc</a>
+        <a href="index.html#kontakt">Kontakt</a>
+      </nav>
+
+      <div class="navbar-cta">
+        <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="pomoc.html" class="nav-link-secondary">Wróć do pomocy</a>
+      </div>
+    </header>
+
+    <main class="subpage-main">
+      <section class="add-listing-layout">
+        <article class="form-panel help-detail-content">
+          <span class="page-kicker">Norwegia</span>
+          <h1 class="page-title">NAV w Norwegii</h1>
+          <p class="page-intro">NAV to jedna z najważniejszych instytucji dla osób pracujących i mieszkających w Norwegii. Przez NAV można załatwiać sprawy związane z pracą, świadczeniami i kontaktem z urzędem pracy.</p>
+
+          <h2>Co trzeba zrobić</h2>
+          <ol class="help-detail-list">
+            <li>Sprawdź, jakiej sprawy dotyczy Twój kontakt z NAV: praca, świadczenia, zasiłki albo rejestracja.</li>
+            <li>Przygotuj dokument tożsamości, dane pracodawcy i numer identyfikacyjny, jeśli już go masz.</li>
+            <li>Załóż konto lub sprawdź oficjalną sekcję informacyjną NAV dla osób pracujących w Norwegii.</li>
+            <li>Skontaktuj się z urzędem online lub stacjonarnie, jeśli Twoja sprawa wymaga osobistej wizyty.</li>
+          </ol>
+
+          <div class="help-link-row">
+            <a href="https://www.nav.no/en/home/work-and-stay-in-norway" class="button button-primary" target="_blank" rel="noopener noreferrer">Przejdź do NAV</a>
+            <a href="pomoc.html#norwegia" class="button button-secondary">Wróć do sekcji Norwegia</a>
+          </div>
+        </article>
+
+        <aside class="info-panel">
+          <h2>Oficjalny urząd</h2>
+          <p>Najbardziej aktualne informacje dla osób pracujących i mieszkających w Norwegii są publikowane na oficjalnej stronie NAV. Tam sprawdzisz aktualne procedury i formularze.</p>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2026 TwojBazar. Wszelkie prawa zastrzeżone.</p>
+    </footer>
+  </div>
+
+  <script>
+    const menuToggle = document.querySelector(".menu-toggle");
+    const navLinks = document.querySelector(".nav-links");
+    const navActions = document.querySelector(".nav-actions");
+
+    if (menuToggle && navLinks && navActions) {
+      menuToggle.addEventListener("click", () => {
+        const isOpen = navLinks.classList.toggle("open");
+        navActions.classList.toggle("open", isOpen);
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+      });
+    }
+  </script>
+</body>
+</html>

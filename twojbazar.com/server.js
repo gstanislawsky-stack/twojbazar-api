@@ -1,9 +1,10 @@
-锘縤mport "dotenv/config";
+import "dotenv/config";
 import express from "express";
 import multer from "multer";
 import OpenAI from "openai";
-import { promises as fs } from "node:fs";
+import { mkdirSync, promises as fs } from "node:fs";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,7 +14,27 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const listingsFilePath = path.join(__dirname, "listings.json");
+const listingsTempFilePath = path.join(__dirname, "listings.json.tmp");
+const uploadsDirPath = path.join(__dirname, "uploads");
 let listings = [];
+let listingsWriteQueue = Promise.resolve();
+const ALLOWED_CATEGORIES = [
+  "Praca dam",
+  "Praca szukam",
+  "Mieszkanie wynajme",
+  "Mieszkanie szukam",
+  "Pok骿 wynajme",
+  "Pok骿 szukam",
+  "Uslugi oferuje",
+  "Uslugi szukam",
+  "Sprzedam",
+  "Kupie",
+  "Transport",
+  "Pomoc / formalnosci",
+  "Poznam ludzi",
+  "Inne",
+];
+const ALLOWED_COUNTRIES = ["Szwecja", "Norwegia", "Dania"];
 
 const allowedOrigins = new Set([
   "https://twojbazar.com",
@@ -31,7 +52,16 @@ const openai = new OpenAI({
 });
 
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: multer.diskStorage({
+    destination: (_req, _file, callback) => {
+      mkdirSync(uploadsDirPath, { recursive: true });
+      callback(null, uploadsDirPath);
+    },
+    filename: (_req, file, callback) => {
+      const safeExtension = path.extname(file.originalname || "").slice(0, 10) || ".jpg";
+      callback(null, `${Date.now()}-${randomUUID()}${safeExtension}`);
+    },
+  }),
   limits: {
     fileSize: 10 * 1024 * 1024,
   },
@@ -44,17 +74,312 @@ const upload = multer({
     callback(null, true);
   },
 });
+const listingUpload = upload.fields([
+  { name: "image", maxCount: 1 },
+  { name: "images", maxCount: 6 },
+]);
 
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeBoolean(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  const normalizedValue = normalizeString(value).toLowerCase();
+  return normalizedValue === "true" || normalizedValue === "1" || normalizedValue === "yes" || normalizedValue === "on";
+}
+
+function normalizeCategoryKey(value) {
+  return normalizeString(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function normalizeCategory(value) {
+  const rawCategory = normalizeString(value);
+
+  if (!rawCategory) {
+    return "Inne";
+  }
+
+  const directMatch = ALLOWED_CATEGORIES.find((category) => normalizeCategoryKey(category) === normalizeCategoryKey(rawCategory));
+
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const normalizedValue = normalizeCategoryKey(rawCategory);
+
+  if (normalizedValue.includes("praca") && normalizedValue.includes("szuk")) {
+    return "Praca szukam";
+  }
+
+  if (normalizedValue.includes("praca")) {
+    return "Praca dam";
+  }
+
+  if (normalizedValue.includes("mieszkan") && normalizedValue.includes("szuk")) {
+    return "Mieszkanie szukam";
+  }
+
+  if (normalizedValue.includes("mieszkan")) {
+    return "Mieszkanie wynajme";
+  }
+
+  if ((normalizedValue.includes("pokoj") || normalizedValue.includes("pok")) && normalizedValue.includes("szuk")) {
+    return "Pok骿 szukam";
+  }
+
+  if (normalizedValue.includes("pokoj") || normalizedValue.includes("pok")) {
+    return "Pok骿 wynajme";
+  }
+
+  if (normalizedValue.includes("uslug") && normalizedValue.includes("szuk")) {
+    return "Uslugi szukam";
+  }
+
+  if (normalizedValue.includes("uslug") || normalizedValue.includes("remont") || normalizedValue.includes("ksieg") || normalizedValue.includes("tlumacz")) {
+    return "Uslugi oferuje";
+  }
+
+  if (normalizedValue.includes("sprzed")) {
+    return "Sprzedam";
+  }
+
+  if (normalizedValue.includes("kupi") || normalizedValue.includes("szukam kup")) {
+    return "Kupie";
+  }
+
+  if (normalizedValue.includes("transport") || normalizedValue.includes("przewoz") || normalizedValue.includes("bus")) {
+    return "Transport";
+  }
+
+  if (normalizedValue.includes("formal") || normalizedValue.includes("pomoc")) {
+    return "Pomoc / formalnosci";
+  }
+
+  if (normalizedValue.includes("poznam") || normalizedValue.includes("ludzi") || normalizedValue.includes("spolecz")) {
+    return "Poznam ludzi";
+  }
+
+  return "Inne";
+}
+
+function normalizeCountry(value) {
+  const rawCountry = normalizeString(value);
+
+  if (!rawCountry) {
+    return "";
+  }
+
+  const directMatch = ALLOWED_COUNTRIES.find((country) => normalizeCategoryKey(country) === normalizeCategoryKey(rawCountry));
+  return directMatch || "";
+}
+
+function normalizePriceValue(value, { strict = false } = {}) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  const rawValue = normalizeString(value).replace(/\s+/g, "").replace(",", ".");
+
+  if (!rawValue) {
+    return strict ? null : "";
+  }
+
+  if (/^-?\d+(\.\d+)?$/.test(rawValue)) {
+    return Number(rawValue);
+  }
+
+  return strict ? null : normalizeString(value);
+}
+
+function sanitizeImageValue(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return "";
+  }
+
+  if (
+    /^https?:\/\//i.test(normalizedValue) ||
+    normalizedValue.startsWith("/")
+  ) {
+    return normalizedValue;
+  }
+
+  return "";
+}
+
+function normalizeStatus(value) {
+  return normalizeString(value) === "inactive" ? "inactive" : "active";
+}
+
+function normalizeListing(listing) {
+  const safeListing = listing && typeof listing === "object" ? listing : {};
+  const normalizedStatus = normalizeStatus(safeListing.status);
+  const normalizedCountry = normalizeCountry(safeListing.country);
+  const normalizedImage = sanitizeImageValue(safeListing.image);
+  const normalizedCreatedAt = normalizeString(safeListing.createdAt);
+
+  return {
+    ...safeListing,
+    id: normalizeString(safeListing.id) || safeListing.id,
+    title: normalizeString(safeListing.title),
+    category: normalizeCategory(safeListing.category),
+    price: normalizePriceValue(safeListing.price),
+    currency: normalizeString(safeListing.currency),
+    country: normalizedCountry,
+    city: normalizeString(safeListing.city),
+    description: normalizeString(safeListing.description),
+    contactName: normalizeString(safeListing.contactName),
+    phone: normalizeString(safeListing.phone),
+    email: normalizeString(safeListing.email),
+    showPhone: normalizeBoolean(safeListing.showPhone),
+    showEmail: normalizeBoolean(safeListing.showEmail),
+    image: normalizedImage,
+    images: Array.isArray(safeListing.images) ? safeListing.images.map(sanitizeImageValue).filter(Boolean) : normalizedImage ? [normalizedImage] : [],
+    createdAt: normalizedCreatedAt,
+    status: normalizedStatus,
+    managementToken: normalizeString(safeListing.managementToken),
+  };
+}
+
+function resolveAssetUrl(req, assetPath) {
+  const normalizedPath = sanitizeImageValue(assetPath);
+
+  if (!normalizedPath || /^https?:\/\//i.test(normalizedPath)) {
+    return normalizedPath;
+  }
+
+  return `${getBaseUrl(req)}${normalizedPath}`;
+}
+
+function serializePublicListing(req, listing) {
+  const { managementToken, ...publicListing } = normalizeListing(listing);
+  return {
+    ...publicListing,
+    image: resolveAssetUrl(req, publicListing.image),
+    images: Array.isArray(publicListing.images) ? publicListing.images.map((item) => resolveAssetUrl(req, item)).filter(Boolean) : [],
+  };
+}
+
+function getBaseUrl(req) {
+  const origin = normalizeString(req.headers.origin);
+
+  if (origin) {
+    return origin.replace(/\/$/, "");
+  }
+
+  return `${req.protocol}://${req.get("host")}`;
+}
+
+function getManagementUrl(req, token) {
+  return `${getBaseUrl(req)}/manage-listing.html?token=${encodeURIComponent(token)}`;
+}
+
+function serializeManagedListing(req, listing) {
+  return {
+    ...serializePublicListing(req, listing),
+    managementUrl: getManagementUrl(req, listing.managementToken),
+  };
+}
+
+function findListingIndexByManagementToken(token) {
+  return listings.findIndex((item) => item.managementToken && item.managementToken === token);
+}
+
+function validateListingPayload(payload, options = {}) {
+  const normalizedListing = normalizeListing(payload);
+  const errors = [];
+
+  if (!normalizedListing.title) {
+    errors.push("Tytul jest wymagany.");
+  }
+
+  if (!normalizedListing.category) {
+    errors.push("Kategoria jest wymagana.");
+  }
+
+  if (!normalizedListing.price) {
+    errors.push("Cena jest wymagana.");
+  }
+
+  if (!normalizedListing.country || !ALLOWED_COUNTRIES.includes(normalizedListing.country)) {
+    errors.push("Kraj musi miec wartosc: Szwecja, Norwegia albo Dania.");
+  }
+
+  if (!normalizedListing.city) {
+    errors.push("Miasto jest wymagane.");
+  }
+
+  if (!normalizedListing.description) {
+    errors.push("Opis jest wymagany.");
+  }
+
+  if (!normalizedListing.contactName) {
+    errors.push("Imie kontaktowe jest wymagane.");
+  }
+
+  if (!normalizedListing.phone && !normalizedListing.email) {
+    errors.push("Podaj telefon albo e-mail kontaktowy.");
+  }
+
+  if (normalizedListing.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedListing.email)) {
+    errors.push("Adres e-mail ma niepoprawny format.");
+  }
+
+  if (normalizedListing.phone && normalizedListing.phone.replace(/[^\d+]/g, "").length < 6) {
+    errors.push("Telefon ma niepoprawny format.");
+  }
+
+  if (options.requireId !== false && !normalizedListing.id && options.existingId) {
+    normalizedListing.id = options.existingId;
+  }
+
+  return {
+    listing: normalizedListing,
+    errors,
+  };
+}
+
+async function ensureListingsFileExists() {
+  await fs.mkdir(uploadsDirPath, { recursive: true });
+
+  try {
+    await fs.access(listingsFilePath);
+  } catch (error) {
+    if (error?.code !== "ENOENT") {
+      throw error;
+    }
+
+    await fs.writeFile(listingsFilePath, "[]\n", "utf8");
+  }
+}
+
 async function loadListings() {
   try {
+    await ensureListingsFileExists();
     const raw = await fs.readFile(listingsFilePath, "utf8");
     const safeRaw = raw.replace(/^\uFEFF/, "");
+
+    if (!safeRaw.trim()) {
+      listings = [];
+      await fs.writeFile(listingsFilePath, "[]\n", "utf8");
+      return;
+    }
+
     const parsed = JSON.parse(safeRaw);
-    listings = Array.isArray(parsed) ? parsed : [];
+    listings = Array.isArray(parsed) ? parsed.map(normalizeListing) : [];
   } catch (error) {
     if (error?.code === "ENOENT") {
       listings = [];
@@ -67,11 +392,33 @@ async function loadListings() {
       stack: error?.stack,
     });
     listings = [];
+
+    try {
+      const backupPath = path.join(__dirname, `listings.corrupt.${Date.now()}.json`);
+      const existingRaw = await fs.readFile(listingsFilePath, "utf8").catch(() => "");
+
+      if (existingRaw) {
+        await fs.writeFile(backupPath, existingRaw, "utf8");
+      }
+
+      await fs.writeFile(listingsFilePath, "[]\n", "utf8");
+    } catch (repairError) {
+      console.error("[Listings] Failed to repair listings file", {
+        message: repairError?.message,
+      });
+    }
   }
 }
 
 async function saveListings() {
-  await fs.writeFile(listingsFilePath, `${JSON.stringify(listings, null, 2)}\n`, "utf8");
+  const snapshot = JSON.stringify(listings.map(normalizeListing), null, 2);
+
+  listingsWriteQueue = listingsWriteQueue.catch(() => undefined).then(async () => {
+    await fs.writeFile(listingsTempFilePath, `${snapshot}\n`, "utf8");
+    await fs.rename(listingsTempFilePath, listingsFilePath);
+  });
+
+  return listingsWriteQueue;
 }
 
 await loadListings();
@@ -84,7 +431,7 @@ app.use((req, res, next) => {
     res.header("Vary", "Origin");
   }
 
-  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
@@ -95,14 +442,19 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: "12mb" }));
+app.use("/uploads", express.static(uploadsDirPath));
 app.use(express.static(__dirname));
 
 app.get("/", (_req, res) => {
-  res.type("text/plain").send("API dzia艂a");
+  res.type("text/plain").send("API dziala");
 });
 
 app.get("/api/listings", (_req, res) => {
-  return res.json(listings);
+  return res.json(
+    listings
+      .filter((listing) => normalizeStatus(listing.status) === "active")
+      .map((listing) => serializePublicListing(res.req, listing))
+  );
 });
 
 app.get("/api/listings/:id", (req, res) => {
@@ -110,52 +462,187 @@ app.get("/api/listings/:id", (req, res) => {
 
   if (!listing) {
     return res.status(404).json({
-      error: "Nie znaleziono og艂oszenia.",
+      error: "Nie znaleziono ogloszenia.",
     });
   }
 
-  return res.json(listing);
+  return res.json(serializePublicListing(req, listing));
 });
 
-app.post("/api/listings", async (req, res) => {
-  const payload = req.body && typeof req.body === "object" ? req.body : {};
-  const listing = {
-    id: Date.now(),
-    title: normalizeString(payload.title),
-    category: normalizeString(payload.category),
-    price: typeof payload.price === "string" ? payload.price.trim() : String(payload.price || "").trim(),
-    currency: normalizeString(payload.currency),
-    country: normalizeString(payload.country),
-    city: normalizeString(payload.city),
-    description: normalizeString(payload.description),
-    contactName: normalizeString(payload.contactName),
-    phone: normalizeString(payload.phone),
-    email: normalizeString(payload.email),
-    showPhone: Boolean(payload.showPhone),
-    showEmail: Boolean(payload.showEmail),
-    image: typeof payload.image === "string" ? payload.image : "",
-    images: Array.isArray(payload.images) ? payload.images.filter((item) => typeof item === "string" && item) : [],
-    createdAt: new Date().toISOString(),
-  };
+app.post("/api/listings", listingUpload, async (req, res) => {
+  try {
+    const payload = req.body && typeof req.body === "object" ? { ...req.body } : {};
+    const uploadedImages = [
+      ...((req.files?.image || []).map((file) => `/uploads/${file.filename}`)),
+      ...((req.files?.images || []).map((file) => `/uploads/${file.filename}`)),
+    ];
 
-  if (!listing.title || !listing.category || !listing.country || !listing.city || !listing.description) {
-    return res.status(400).json({
-      error: "Brakuje wymaganych p贸l og艂oszenia.",
+    if (uploadedImages.length) {
+      payload.image = uploadedImages[0];
+      payload.images = uploadedImages;
+    }
+
+    const { listing: normalizedPayload, errors } = validateListingPayload(payload, { requireId: false });
+
+    if (errors.length) {
+      return res.status(400).json({
+        error: errors[0],
+        details: errors,
+      });
+    }
+
+    const createdAt = new Date().toISOString();
+    const listing = {
+      ...normalizedPayload,
+      id: randomUUID(),
+      createdAt,
+      managementToken: randomUUID(),
+      status: "active",
+    };
+
+    listings.unshift(listing);
+    await saveListings();
+
+    console.log("[Listings] Created listing", {
+      id: listing.id,
+      title: listing.title,
+      category: listing.category,
+      country: listing.country,
+      city: listing.city,
+    });
+
+    return res.status(201).json(serializeManagedListing(req, listing));
+  } catch (error) {
+    console.error("[Listings] Failed to create listing", {
+      message: error?.message,
+      stack: error?.stack,
+    });
+
+    return res.status(500).json({
+      error: "Nie udalo sie zapisac ogloszenia.",
+    });
+  }
+});
+
+app.get("/api/manage/:token", (req, res) => {
+  const token = normalizeString(req.params.token);
+  const listing = listings.find((item) => item.managementToken === token);
+
+  if (!listing) {
+    return res.status(404).json({
+      error: "Nie znaleziono ogloszenia do zarzadzania.",
     });
   }
 
-  listings.unshift(listing);
-  await saveListings();
+  return res.json(serializeManagedListing(req, listing));
+});
 
-  console.log("[Listings] Created listing", {
-    id: listing.id,
-    title: listing.title,
-    category: listing.category,
-    country: listing.country,
-    city: listing.city,
-  });
+app.put("/api/manage/:token", async (req, res) => {
+  try {
+    const token = normalizeString(req.params.token);
+    const listingIndex = findListingIndexByManagementToken(token);
 
-  return res.status(201).json(listing);
+    if (listingIndex === -1) {
+      return res.status(404).json({
+        error: "Nie znaleziono ogloszenia do edycji.",
+      });
+    }
+
+    const existingListing = listings[listingIndex];
+    const { listing: normalizedPayload, errors } = validateListingPayload(req.body, {
+      existingId: existingListing.id,
+    });
+
+    if (errors.length) {
+      return res.status(400).json({
+        error: errors[0],
+        details: errors,
+      });
+    }
+
+    const updatedListing = {
+      ...existingListing,
+      ...normalizedPayload,
+      id: existingListing.id,
+      createdAt: existingListing.createdAt,
+      dateAdded: existingListing.createdAt,
+      managementToken: existingListing.managementToken,
+      status: existingListing.status,
+    };
+
+    listings[listingIndex] = updatedListing;
+    await saveListings();
+
+    return res.json(serializeManagedListing(req, updatedListing));
+  } catch (error) {
+    console.error("[Listings] Failed to update listing", {
+      message: error?.message,
+      stack: error?.stack,
+    });
+
+    return res.status(500).json({
+      error: "Nie udalo sie zaktualizowac ogloszenia.",
+    });
+  }
+});
+
+app.patch("/api/manage/:token/status", async (req, res) => {
+  try {
+    const token = normalizeString(req.params.token);
+    const listingIndex = findListingIndexByManagementToken(token);
+
+    if (listingIndex === -1) {
+      return res.status(404).json({
+        error: "Nie znaleziono ogloszenia do zmiany statusu.",
+      });
+    }
+
+    const nextStatus = normalizeStatus(req.body?.status);
+    listings[listingIndex] = {
+      ...listings[listingIndex],
+      status: nextStatus,
+    };
+
+    await saveListings();
+
+    return res.json(serializeManagedListing(req, listings[listingIndex]));
+  } catch (error) {
+    console.error("[Listings] Failed to update listing status", {
+      message: error?.message,
+      stack: error?.stack,
+    });
+
+    return res.status(500).json({
+      error: "Nie udalo sie zmienic statusu ogloszenia.",
+    });
+  }
+});
+
+app.delete("/api/manage/:token", async (req, res) => {
+  try {
+    const token = normalizeString(req.params.token);
+    const listingIndex = findListingIndexByManagementToken(token);
+
+    if (listingIndex === -1) {
+      return res.status(404).json({
+        error: "Nie znaleziono ogloszenia do usuniecia.",
+      });
+    }
+
+    listings.splice(listingIndex, 1);
+    await saveListings();
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error("[Listings] Failed to delete listing", {
+      message: error?.message,
+      stack: error?.stack,
+    });
+
+    return res.status(500).json({
+      error: "Nie udalo sie usunac ogloszenia.",
+    });
+  }
 });
 
 async function handleGenerateDescription(req, res) {
@@ -200,7 +687,7 @@ async function handleGenerateDescription(req, res) {
     const response = await openai.responses.create({
       model,
       instructions:
-        "Generate realistic marketplace listings in natural, user-friendly Polish. The output must sound like a real classified ad written by a person, not like marketing copy. Keep the description practical, clear and easy to scan. The description must be 3 to 5 sentences long. Do not invent brands, technical specifications, dimensions, defects, accessories, locations, prices or condition details unless they are clearly visible in the image. If something is uncertain, keep the wording general and cautious. Use marketplace-friendly language suitable for classifieds. The category must be one of: Praca, Mieszkania, Us艂ugi, Sprzedam, Kupi臋, Transport.",
+        "Generate realistic marketplace listings in natural, user-friendly Polish. The output must sound like a real classified ad written by a person, not like marketing copy. Keep the description practical, clear and easy to scan. The description must be 3 to 5 sentences long. Do not invent brands, technical specifications, dimensions, defects, accessories, locations, prices or condition details unless they are clearly visible in the image. If something is uncertain, keep the wording general and cautious. Use marketplace-friendly language suitable for classifieds. The category must be exactly one of: Praca dam, Praca szukam, Mieszkanie wynajme, Mieszkanie szukam, Pok骿 wynajme, Pok骿 szukam, Uslugi oferuje, Uslugi szukam, Sprzedam, Kupie, Transport, Pomoc / formalnosci, Poznam ludzi, Inne. If no category clearly fits, use Inne.",
       input: [
         {
           role: "user",
@@ -208,7 +695,7 @@ async function handleGenerateDescription(req, res) {
             {
               type: "input_text",
               text:
-                "Przeanalizuj zdj臋cie i wygeneruj dane og艂oszenia po polsku. Tytu艂 ma by膰 kr贸tki, naturalny i wiarygodny. Kategoria ma by膰 realistycznie dobrana z listy: Praca, Mieszkania, Us艂ugi, Sprzedam, Kupi臋, Transport. Opis ma mie膰 od 3 do 5 zda艅, brzmie膰 naturalnie i nadawa膰 si臋 do portalu og艂oszeniowego. Pisz jasno, konkretnie i przyja藕nie dla u偶ytkownika. Nie dopisuj informacji, kt贸rych nie da si臋 rozs膮dnie wywnioskowa膰 ze zdj臋cia. Lista features powinna zawiera膰 kr贸tkie, praktyczne cechy widoczne na zdj臋ciu lub bardzo ostro偶ne obserwacje. Zwr贸膰 wy艂膮cznie dane zgodne z wymaganym schematem JSON.",
+                "Przeanalizuj zdjecie i wygeneruj dane ogloszenia po polsku. Tytul ma byc kr髏ki, naturalny i wiarygodny. Kategoria ma byc wybrana dokladnie z tej listy: Praca dam, Praca szukam, Mieszkanie wynajme, Mieszkanie szukam, Pok骿 wynajme, Pok骿 szukam, Uslugi oferuje, Uslugi szukam, Sprzedam, Kupie, Transport, Pomoc / formalnosci, Poznam ludzi, Inne. Nie tw髍z nowych kategorii i nie zmieniaj nazw. Jesli nic nie pasuje, ustaw Inne. Opis ma miec od 3 do 5 zdan, brzmiec naturalnie i nadawac sie do portalu ogloszeniowego. Pisz jasno, konkretnie i przyjaznie dla uzytkownika. Nie dopisuj informacji, kt髍ych nie da sie rozsadnie wywnioskowac ze zdjecia. Lista features powinna zawierac kr髏kie, praktyczne cechy widoczne na zdjeciu lub bardzo ostrozne obserwacje. Zwr骳 wylacznie dane zgodne z wymaganym schematem JSON.",
             },
             {
               type: "input_image",
@@ -254,20 +741,26 @@ async function handleGenerateDescription(req, res) {
 
     return res.json({
       title: parsed.title || "",
-      category: parsed.category || "",
+      category: normalizeCategory(parsed.category),
       description: parsed.description || "",
       features: Array.isArray(parsed.features) ? parsed.features : [],
     });
   } catch (error) {
+    const errorMessage =
+      error?.message ||
+      error?.error?.message ||
+      error?.cause?.message ||
+      "Failed to generate listing data from image.";
+
     console.error("[AI] Image generation endpoint error", {
-      message: error?.message,
+      message: errorMessage,
       status: error?.status,
       code: error?.code,
       stack: error?.stack,
     });
 
     return res.status(500).json({
-      error: "Failed to generate listing data from image.",
+      error: errorMessage,
     });
   }
 }
@@ -301,7 +794,7 @@ async function handleModerateListing(req, res) {
           content: [
             {
               type: "input_text",
-              text: `Tytu艂: ${title}\nOpis: ${description}`,
+              text: `Tytul: ${title}\nOpis: ${description}`,
             },
           ],
         },
@@ -344,15 +837,21 @@ async function handleModerateListing(req, res) {
       allowed: label === "allowed",
     });
   } catch (error) {
+    const errorMessage =
+      error?.message ||
+      error?.error?.message ||
+      error?.cause?.message ||
+      "Failed to moderate listing content.";
+
     console.error("[Moderation] Listing moderation error", {
-      message: error?.message,
+      message: errorMessage,
       status: error?.status,
       code: error?.code,
       stack: error?.stack,
     });
 
     return res.status(500).json({
-      error: "Failed to moderate listing content.",
+      error: errorMessage,
     });
   }
 }
@@ -369,7 +868,8 @@ app.use((error, _req, res, _next) => {
     });
 
     return res.status(400).json({
-      error: error.message,
+      error: "Nie udalo sie przetworzyc przeslanego pliku.",
+      details: [error.message],
     });
   }
 
@@ -383,16 +883,28 @@ app.use((error, _req, res, _next) => {
     });
   }
 
+  if (error?.type === "entity.parse.failed") {
+    return res.status(400).json({
+      error: "Nieprawidlowy format danych JSON.",
+    });
+  }
+
   console.error("[Server] Unhandled server error", {
     message: error?.message,
     stack: error?.stack,
   });
 
   return res.status(500).json({
-    error: "Unexpected server error.",
+    error: "Wystapil nieoczekiwany blad serwera.",
   });
 });
 
 app.listen(port, () => {
   console.log(`TwojBazar server running on port ${port}`);
 });
+
+
+
+
+
+

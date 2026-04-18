@@ -1,7 +1,22 @@
-﻿const API_BASE_URL = "https://twojbazar-api.onrender.com";
-const AI_GENERATE_ENDPOINT = `${API_BASE_URL}/api/generate-description`;
-const MODERATION_ENDPOINT = `${API_BASE_URL}/api/moderate-listing`;
-const LISTINGS_ENDPOINT = `${API_BASE_URL}/api/listings`;
+const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
+const API_PATHS = {
+  generateDescription: "/api/generate-description",
+  moderateListing: "/api/moderate-listing",
+  listings: "/api/listings",
+};
+
+function getApiCandidates(path) {
+  const candidates = [];
+  const normalizedPath = path.startsWith("/") ? path : "/" + path;
+
+  if (window.location.protocol.startsWith("http")) {
+    candidates.push(normalizedPath);
+  }
+
+  candidates.push(RENDER_API_BASE_URL + normalizedPath);
+
+  return [...new Set(candidates)];
+}
 
 const menuToggle = document.querySelector(".menu-toggle");
 const navLinks = document.querySelector(".nav-links");
@@ -11,6 +26,9 @@ const formStatus = document.getElementById("formStatus");
 const aiStatus = document.getElementById("aiStatus");
 const generateFromImageButton = document.getElementById("generateFromImageButton");
 const imageInput = document.getElementById("listingImage");
+const imageGalleryInput = document.getElementById("listingImageGallery");
+const imageCameraTrigger = document.getElementById("listingImageCameraTrigger");
+const imageGalleryTrigger = document.getElementById("listingImageGalleryTrigger");
 const imageFileStatus = document.getElementById("imageFileStatus");
 const imagePreview = document.getElementById("imagePreview");
 const imagePreviewThumb = document.getElementById("imagePreviewThumb");
@@ -29,11 +47,29 @@ const phoneInput = document.getElementById("phone");
 const emailInput = document.getElementById("email");
 const showPhoneInput = document.getElementById("showPhone");
 const showEmailInput = document.getElementById("showEmail");
+const aiQuickStartSection = document.getElementById("ai-quick-start");
+const CATEGORY_OPTIONS = [
+  "Praca dam",
+  "Praca szukam",
+  "Mieszkanie wynajm\u0119",
+  "Mieszkanie szukam",
+  "Pok\u00f3j wynajm\u0119",
+  "Pok\u00f3j szukam",
+  "Us\u0142ugi oferuj\u0119",
+  "Us\u0142ugi szukam",
+  "Sprzedam",
+  "Kupi\u0119",
+  "Transport",
+  "Pomoc / formalno\u015bci",
+  "Poznam ludzi",
+  "Inne",
+];
 const COUNTRY_CURRENCY_MAP = {
-  Sweden: "SEK",
-  Norway: "NOK",
-  Denmark: "DKK",
+  Szwecja: "SEK",
+  Norwegia: "NOK",
+  Dania: "DKK",
 };
+const isQuickAiMode = new URLSearchParams(window.location.search).get("mode") === "ai";
 
 if (menuToggle && navLinks && navActions) {
   menuToggle.addEventListener("click", () => {
@@ -71,12 +107,154 @@ function setStatus(element, message, type = "") {
   element.className = `form-status${type ? ` ${type}` : ""}`;
 }
 
+async function readErrorResponse(response) {
+  const fallbackMessage = `Błąd serwera: ${response.status}`;
+
+  try {
+    const data = await response.clone().json();
+    return data?.error || data?.message || fallbackMessage;
+  } catch (_error) {
+    try {
+      const text = await response.text();
+
+      if (text && text.trim().startsWith("<!DOCTYPE")) {
+        return `Endpoint API nie istnieje pod adresem ${response.url} (HTTP ${response.status}).`;
+      }
+
+      return text || fallbackMessage;
+    } catch (_textError) {
+      return fallbackMessage;
+    }
+  }
+}
+
+async function fetchWithApiFallback(path, options = {}) {
+  const candidates = getApiCandidates(path);
+  let lastError = null;
+
+  for (const url of candidates) {
+    try {
+      const response = await fetch(url, options);
+
+      if (response.ok) {
+        return response;
+      }
+
+      const errorMessage = await readErrorResponse(response);
+      const notFoundHtml = response.status === 404 && errorMessage.includes("Endpoint API nie istnieje");
+
+      console.error("API request failed:", {
+        url,
+        status: response.status,
+        errorMessage,
+      });
+
+      if (notFoundHtml && url !== candidates[candidates.length - 1]) {
+        lastError = new Error(errorMessage);
+        continue;
+      }
+
+      throw new Error(errorMessage);
+    } catch (error) {
+      lastError = error;
+
+      console.error("API request error:", {
+        url,
+        error,
+      });
+
+      if (url === candidates[candidates.length - 1]) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError || new Error("Nie udało się połączyć z API.");
+}
+
 function normalizeSpaces(value) {
   return value.trim().replace(/\s+/g, " ");
 }
 
 function normalizeDescription(value) {
   return String(value || "").trim();
+}
+
+function normalizeCategoryKey(value) {
+  return normalizeSpaces(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function normalizeCategory(value) {
+  const rawCategory = normalizeSpaces(value);
+
+  if (!rawCategory) {
+    return "Inne";
+  }
+
+  const directMatch = CATEGORY_OPTIONS.find((category) => normalizeCategoryKey(category) === normalizeCategoryKey(rawCategory));
+
+  if (directMatch) {
+    return directMatch;
+  }
+
+  const normalizedValue = normalizeCategoryKey(rawCategory);
+
+  if (normalizedValue.includes("praca") && normalizedValue.includes("szuk")) {
+    return "Praca szukam";
+  }
+
+  if (normalizedValue.includes("praca")) {
+    return "Praca dam";
+  }
+
+  if (normalizedValue.includes("mieszkan") && normalizedValue.includes("szuk")) {
+    return "Mieszkanie szukam";
+  }
+
+  if (normalizedValue.includes("mieszkan")) {
+    return "Mieszkanie wynajm\u0119";
+  }
+
+  if (normalizedValue.includes("pokoj") && normalizedValue.includes("szuk")) {
+    return "Pok\u00f3j szukam";
+  }
+
+  if (normalizedValue.includes("pokoj")) {
+    return "Pok\u00f3j wynajm\u0119";
+  }
+
+  if (normalizedValue.includes("uslug") && normalizedValue.includes("szuk")) {
+    return "Us\u0142ugi szukam";
+  }
+
+  if (normalizedValue.includes("uslug") || normalizedValue.includes("remont") || normalizedValue.includes("formal")) {
+    return normalizedValue.includes("formal") ? "Pomoc / formalno\u015bci" : "Us\u0142ugi oferuj\u0119";
+  }
+
+  if (normalizedValue.includes("sprzed")) {
+    return "Sprzedam";
+  }
+
+  if (normalizedValue.includes("kupi")) {
+    return "Kupi\u0119";
+  }
+
+  if (normalizedValue.includes("transport") || normalizedValue.includes("przewoz") || normalizedValue.includes("bus")) {
+    return "Transport";
+  }
+
+  if (normalizedValue.includes("pomoc") || normalizedValue.includes("formal")) {
+    return "Pomoc / formalno\u015bci";
+  }
+
+  if (normalizedValue.includes("poznam") || normalizedValue.includes("ludzi") || normalizedValue.includes("spolecz")) {
+    return "Poznam ludzi";
+  }
+
+  return "Inne";
 }
 
 function getCurrencyForCountry(country) {
@@ -105,10 +283,12 @@ function validateField(field) {
     case "category":
       return setFieldState(field.name, value !== "");
     case "price":
-      return setFieldState(field.name, value !== "" && Number(value) >= 0);
+      return setFieldState(field.name, value !== "");
     case "country":
       return setFieldState(field.name, value !== "");
     case "city":
+      return setFieldState(field.name, value.length >= 2);
+    case "contactName":
       return setFieldState(field.name, value.length >= 2);
     case "phone":
       return setFieldState(field.name, value === "" || value.length >= 6);
@@ -121,17 +301,28 @@ function validateField(field) {
   }
 }
 
-async function createListing(listing) {
-  const response = await fetch(LISTINGS_ENDPOINT, {
+async function createListing(listing, imageFile) {
+  const formData = new FormData();
+
+  Object.entries(listing).forEach(([key, value]) => {
+    if (key === "image" || key === "images" || value === undefined || value === null) {
+      return;
+    }
+
+    formData.append(key, typeof value === "boolean" ? String(value) : String(value));
+  });
+
+  if (imageFile) {
+    formData.append("image", imageFile);
+  }
+
+  const response = await fetchWithApiFallback(API_PATHS.listings, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(listing),
+    body: formData,
   });
 
   if (!response.ok) {
-    throw new Error(`Błąd zapisu ogłoszenia: ${response.status}`);
+    throw new Error(await readErrorResponse(response));
   }
 
   return response.json();
@@ -151,9 +342,17 @@ function readImageAsDataUrl(file) {
   });
 }
 
+function getSelectedImageFile() {
+  return imageInput?.files?.[0] || imageGalleryInput?.files?.[0] || null;
+}
+
 function resetImageSelection() {
   if (imageInput) {
     imageInput.value = "";
+  }
+
+  if (imageGalleryInput) {
+    imageGalleryInput.value = "";
   }
 
   if (imageFileStatus) {
@@ -226,7 +425,7 @@ function updateFeatures(features = []) {
 }
 
 async function moderateListingContent({ title, description }) {
-  const response = await fetch(MODERATION_ENDPOINT, {
+  const response = await fetchWithApiFallback(API_PATHS.moderateListing, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -238,25 +437,10 @@ async function moderateListingContent({ title, description }) {
   });
 
   if (!response.ok) {
-    throw new Error(`Błąd moderacji: ${response.status}`);
+    throw new Error(await readErrorResponse(response));
   }
 
   return response.json();
-}
-
-function ensureCategoryOption(category) {
-  if (!categorySelect || !category) {
-    return;
-  }
-
-  const existingOption = [...categorySelect.options].find((option) => option.value === category);
-
-  if (!existingOption) {
-    const option = document.createElement("option");
-    option.value = category;
-    option.textContent = category;
-    categorySelect.appendChild(option);
-  }
 }
 
 function autofillGeneratedContent(payload) {
@@ -266,8 +450,7 @@ function autofillGeneratedContent(payload) {
   }
 
   if (payload.category && categorySelect) {
-    ensureCategoryOption(payload.category);
-    categorySelect.value = payload.category;
+    categorySelect.value = normalizeCategory(payload.category);
     validateField(categorySelect);
   }
 
@@ -277,10 +460,17 @@ function autofillGeneratedContent(payload) {
   }
 
   updateFeatures(Array.isArray(payload.features) ? payload.features : []);
+
+  if (isQuickAiMode) {
+    countrySelect?.scrollIntoView({ behavior: "smooth", block: "center" });
+    countrySelect?.focus();
+  }
 }
 
 async function generateListingFromImage() {
-  if (!imageInput?.files?.length) {
+  const selectedImage = getSelectedImageFile();
+
+  if (!selectedImage) {
     setFieldState("image", false);
     setStatus(aiStatus, "Dodaj zdjęcie, aby wygenerować opis ze zdjęcia.", "error");
     return;
@@ -292,16 +482,16 @@ async function generateListingFromImage() {
   generateFromImageButton.textContent = "⏳ Analizuję zdjęcie...";
 
   const formData = new FormData();
-  formData.append("image", imageInput.files[0]);
+  formData.append("image", selectedImage);
 
   try {
-    const response = await fetch(AI_GENERATE_ENDPOINT, {
+    const response = await fetchWithApiFallback(API_PATHS.generateDescription, {
       method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
-      throw new Error(`Błąd serwera: ${response.status}`);
+      throw new Error(await readErrorResponse(response));
     }
 
     const data = await response.json();
@@ -313,14 +503,20 @@ async function generateListingFromImage() {
       features: Array.isArray(data.features) ? data.features : [],
     });
 
-    setStatus(aiStatus, "AI uzupełniło formularz. Sprawdź wynik i dopracuj treść.", "success");
+    setStatus(aiStatus, "AI przygotowalo szkic. Sprawdz dane i uzupelnij tylko kraj, miasto, kontakt oraz cene jesli jest potrzebna.", "success");
   } catch (error) {
+    const errorMessage = error instanceof Error
+      ? error.message
+      : "Nie udało się wygenerować opisu ze zdjęcia.";
+
     setStatus(
       aiStatus,
-      "Nie udało się wygenerować opisu ze zdjęcia. Sprawdź połączenie z backendem i spróbuj ponownie.",
+      errorMessage,
       "error"
     );
-    console.error("AI generation error:", error);
+    console.error("AI generation error:", {
+      error,
+    });
   } finally {
     generateFromImageButton.disabled = false;
     generateFromImageButton.textContent = "✨ Uzupełnij ogłoszenie z AI";
@@ -330,11 +526,38 @@ async function generateListingFromImage() {
 if (generateFromImageButton) {
   generateFromImageButton.addEventListener("click", generateListingFromImage);
 }
+async function handleImageSelection(activeInput, otherInput) {
+  if (otherInput) {
+    otherInput.value = "";
+  }
+
+  await updateImagePreview(activeInput?.files?.[0]);
+  setStatus(aiStatus, "", "");
+}
+
+if (imageCameraTrigger && imageInput) {
+  imageCameraTrigger.addEventListener("click", (event) => {
+    event.preventDefault();
+    imageInput.click();
+  });
+}
+
+if (imageGalleryTrigger && imageGalleryInput) {
+  imageGalleryTrigger.addEventListener("click", (event) => {
+    event.preventDefault();
+    imageGalleryInput.click();
+  });
+}
 
 if (imageInput) {
   imageInput.addEventListener("change", async () => {
-    await updateImagePreview(imageInput.files[0]);
-    setStatus(aiStatus, "", "");
+    await handleImageSelection(imageInput, imageGalleryInput);
+  });
+}
+
+if (imageGalleryInput) {
+  imageGalleryInput.addEventListener("change", async () => {
+    await handleImageSelection(imageGalleryInput, imageInput);
   });
 }
 
@@ -374,16 +597,20 @@ if (form) {
     });
 
     const isFormValid = fields.every((field) => validateField(field));
+    const hasContactMethod = normalizeSpaces(phoneInput?.value || "") || normalizeSpaces(emailInput?.value || "");
 
-    if (!isFormValid) {
-      setStatus(formStatus, "Uzupełnij poprawnie wymagane pola formularza.", "error");
+    if (!isFormValid || !hasContactMethod) {
+      setFieldState("phone", Boolean(hasContactMethod));
+      setFieldState("email", Boolean(hasContactMethod));
+      setStatus(formStatus, "Uzupelnij poprawnie wymagane pola i podaj telefon albo e-mail.", "error");
       return;
     }
 
     try {
+      const selectedImage = getSelectedImageFile();
       const listing = {
         title: normalizeSpaces(titleInput?.value || ""),
-        category: categorySelect?.value || "",
+        category: normalizeCategory(categorySelect?.value || ""),
         price: String(priceInput?.value || ""),
         country: countrySelect?.value || "",
         currency: getCurrencyForCountry(countrySelect?.value),
@@ -394,32 +621,57 @@ if (form) {
         email: normalizeSpaces(emailInput?.value || ""),
         showPhone: Boolean(showPhoneInput?.checked),
         showEmail: Boolean(showEmailInput?.checked),
-        image: await readImageAsDataUrl(imageInput?.files?.[0]),
       };
 
-      listing.images = listing.image ? [listing.image] : [];
+      let moderationResult = { allowed: true };
 
-      const moderationResult = await moderateListingContent({
-        title: listing.title,
-        description: listing.description,
-      });
+      try {
+        moderationResult = await moderateListingContent({
+          title: listing.title,
+          description: listing.description,
+        });
+      } catch (moderationError) {
+        console.warn("Moderation unavailable, continuing without moderation.", moderationError);
+      }
 
       if (!moderationResult.allowed) {
         setStatus(formStatus, "Ogłoszenie narusza zasady serwisu.", "error");
         return;
       }
 
-      await createListing(listing);
-      setStatus(formStatus, "Ogłoszenie zostało zapisane. Przenoszę na stronę główną...", "success");
+      const createdListing = await createListing(listing, selectedImage);
+      setStatus(formStatus, "Ogłoszenie zostało zapisane. Otwieram prywatny link do zarządzania...", "success");
+
+      if (createdListing?.managementUrl) {
+        window.location.href = createdListing.managementUrl;
+        return;
+      }
+
       window.location.href = "index.html";
     } catch (error) {
       console.error("Listing save error:", error);
-      setStatus(formStatus, "Nie udało się zapisać ogłoszenia. Spróbuj ponownie.", "error");
+      setStatus(
+        formStatus,
+        error instanceof Error ? error.message : "Nie udalo sie zapisac ogloszenia. Spr�buj ponownie.",
+        "error"
+      );
     }
   });
 }
 
 updatePriceField();
+
+if (isQuickAiMode && aiQuickStartSection) {
+  requestAnimationFrame(() => {
+    aiQuickStartSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    imageInput?.focus();
+    setStatus(aiStatus, "Dodaj zdjecie lub zrob zdjecie aparatem, a AI wypelni kategorie, tytul, opis i najwazniejsze cechy.", "");
+  });
+}
+
+
+
+
 
 
 

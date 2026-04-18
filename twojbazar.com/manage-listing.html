@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Zarządzaj ogłoszeniem w TwojBazar.">
+  <title>Zarządzaj ogłoszeniem | TwojBazar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="navbar">
+      <a href="index.html#start" class="logo">
+        <span class="logo-mark">TB</span>
+        <span class="logo-text">TwojBazar</span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-label="Otwórz menu" aria-expanded="false" aria-controls="site-navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="nav-links" id="site-navigation">
+        <a href="index.html#start">Start</a>
+        <a href="index.html#kategorie">Kategorie</a>
+        <a href="pomoc.html">Pomoc</a>
+        <a href="index.html#kontakt">Kontakt</a>
+      </nav>
+
+      <div class="navbar-cta">
+        <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="index.html#ogloszenia" class="nav-link-secondary">Przeglądaj</a>
+      </div>
+    </header>
+
+    <main class="subpage-main">
+      <section class="add-listing-layout">
+        <div class="form-panel">
+          <span class="page-kicker">Prywatny link</span>
+          <h1 class="page-title">Zarządzaj ogłoszeniem</h1>
+          <p class="page-intro" id="manageIntro">Ładowanie danych ogłoszenia...</p>
+
+          <form class="listing-form" id="manageListingForm" novalidate>
+            <div class="form-field" data-field="title">
+              <label for="manageTitle">Tytuł</label>
+              <input id="manageTitle" name="title" type="text">
+            </div>
+
+            <div class="form-row">
+              <div class="form-field" data-field="category">
+                <label for="manageCategory">Kategoria</label>
+                <select id="manageCategory" name="category"></select>
+              </div>
+
+              <div class="form-field" data-field="price">
+                <label for="managePrice">Cena</label>
+                <input id="managePrice" name="price" type="text">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field" data-field="country">
+                <label for="manageCountry">Kraj</label>
+                <select id="manageCountry" name="country">
+                  <option value="">Wybierz kraj</option>
+                  <option value="Szwecja">Szwecja</option>
+                  <option value="Norwegia">Norwegia</option>
+                  <option value="Dania">Dania</option>
+                </select>
+              </div>
+
+              <div class="form-field" data-field="city">
+                <label for="manageCity">Miasto</label>
+                <input id="manageCity" name="city" type="text">
+              </div>
+            </div>
+
+            <div class="form-field" data-field="description">
+              <label for="manageDescription">Opis</label>
+              <textarea id="manageDescription" name="description"></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="manageImage">Zdjęcie</label>
+              <input id="manageImage" type="file" accept="image/*" class="file-input-native">
+              <label for="manageImage" class="file-upload-ui">
+                <span class="file-upload-trigger">Wybierz nowe zdjęcie</span>
+                <span class="file-upload-status" id="manageImageStatus">Bez zmian</span>
+              </label>
+              <div class="image-preview hidden" id="manageImagePreview">
+                <img id="manageImagePreviewThumb" alt="Podgląd zdjęcia">
+                <button type="button" class="image-preview-remove" id="manageRemoveImageButton">Usuń wybrane zdjęcie</button>
+              </div>
+            </div>
+
+            <section class="form-section" aria-labelledby="manageContactTitle">
+              <div class="form-section-header">
+                <p class="form-section-kicker">Kontakt</p>
+                <h2 id="manageContactTitle">Dane kontaktowe</h2>
+              </div>
+
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="manageContactName">Imię kontaktowe</label>
+                  <input id="manageContactName" type="text">
+                </div>
+
+                <div class="form-field">
+                  <label for="managePhone">Telefon</label>
+                  <input id="managePhone" type="tel">
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="manageEmail">E-mail</label>
+                <input id="manageEmail" type="email">
+              </div>
+
+              <div class="form-row form-row-compact">
+                <label class="checkbox-field" for="manageShowPhone">
+                  <input id="manageShowPhone" type="checkbox">
+                  <span>Pokaż telefon w ogłoszeniu</span>
+                </label>
+
+                <label class="checkbox-field" for="manageShowEmail">
+                  <input id="manageShowEmail" type="checkbox">
+                  <span>Pokaż e-mail w ogłoszeniu</span>
+                </label>
+              </div>
+            </section>
+
+            <div class="form-actions">
+              <button type="submit" class="button button-primary">Zapisz zmiany</button>
+              <button type="button" class="button button-secondary" id="toggleStatusButton">Oznacz jako nieaktualne</button>
+              <button type="button" class="button button-secondary" id="deleteListingButton">Usuń ogłoszenie</button>
+            </div>
+
+            <p class="form-status" id="manageStatus" aria-live="polite"></p>
+          </form>
+        </div>
+
+        <aside class="info-panel">
+          <h2>Twój link do zarządzania</h2>
+          <p>Zachowaj ten link. Tylko przez niego można edytować, usunąć lub oznaczyć ogłoszenie jako nieaktualne.</p>
+          <div class="listing-details-contact">
+            <p id="manageLinkText"></p>
+            <button type="button" class="button button-secondary" id="copyManageLinkButton">Kopiuj link</button>
+            <a class="button button-secondary" id="viewListingButton" href="index.html">Zobacz ogłoszenie</a>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2026 TwojBazar. Wszelkie prawa zastrzeżone.</p>
+    </footer>
+  </div>
+
+  <script src="manage-listing.js"></script>
+</body>
+</html>
+
+

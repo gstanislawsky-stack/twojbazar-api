@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Personnummer w Szwecji - krótki poradnik dla Polaków. Sprawdź, co przygotować, jak złożyć wniosek i gdzie szukać oficjalnych informacji.">
+  <title>Personnummer w Szwecji - co zrobić krok po kroku | TwojBazar</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="navbar">
+      <a href="index.html#start" class="logo">
+        <span class="logo-mark">TB</span>
+        <span class="logo-text">TwojBazar</span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-label="Otwórz menu" aria-expanded="false" aria-controls="site-navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="nav-links" id="site-navigation">
+        <a href="index.html#start">Start</a>
+        <a href="pomoc.html">Pomoc</a>
+        <a href="index.html#kontakt">Kontakt</a>
+      </nav>
+
+      <div class="navbar-cta">
+        <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="pomoc.html" class="nav-link-secondary">Wróć do pomocy</a>
+      </div>
+    </header>
+
+    <main class="subpage-main">
+      <section class="add-listing-layout">
+        <article class="form-panel help-detail-content">
+          <span class="page-kicker">Szwecja</span>
+          <h1 class="page-title">Personnummer w Szwecji</h1>
+          <p class="page-intro">Personnummer to jeden z najważniejszych numerów dla osób, które planują dłuższy pobyt i pracę w Szwecji. Ułatwia kontakt z urzędami, opieką zdrowotną, bankiem i pracodawcą.</p>
+
+          <h2>Co trzeba zrobić</h2>
+          <ol class="help-detail-list">
+            <li>Sprawdź, czy spełniasz warunki pobytu wymagane do złożenia wniosku o personnummer.</li>
+            <li>Przygotuj paszport lub dowód, dokument potwierdzający prawo pobytu oraz podstawę pobytu w Szwecji.</li>
+            <li>Zgłoś się do urzędu Skatteverket i złóż wniosek wraz z wymaganymi dokumentami.</li>
+            <li>Odbieraj korespondencję z urzędu i monitoruj status sprawy.</li>
+          </ol>
+
+          <div class="help-link-row">
+            <a href="https://www.skatteverket.se/servicelankar/otherlanguages/inenglishengelska/individualsandemployees/movingtosweden/personalidentitynumberandcoordinationnumber.4.5c281c7015abecc2e201130b.html" class="button button-primary" target="_blank" rel="noopener noreferrer">Przejdź do Skatteverket</a>
+            <a href="pomoc.html#szwecja" class="button button-secondary">Wróć do sekcji Szwecja</a>
+          </div>
+        </article>
+
+        <aside class="info-panel">
+          <h2>Oficjalny urząd</h2>
+          <p>Najbardziej aktualne informacje o personnummer publikuje szwedzki urząd Skatteverket. Zawsze warto sprawdzić tam wymagane dokumenty i aktualne zasady.</p>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>&copy; 2026 TwojBazar. Wszelkie prawa zastrzeżone.</p>
+    </footer>
+  </div>
+
+  <script>
+    const menuToggle = document.querySelector(".menu-toggle");
+    const navLinks = document.querySelector(".nav-links");
+    const navActions = document.querySelector(".nav-actions");
+
+    if (menuToggle && navLinks && navActions) {
+      menuToggle.addEventListener("click", () => {
+        const isOpen = navLinks.classList.toggle("open");
+        navActions.classList.toggle("open", isOpen);
+        menuToggle.setAttribute("aria-expanded", String(isOpen));
+      });
+    }
+  </script>
+</body>
+</html>
