@@ -1,4 +1,4 @@
-const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
+﻿const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
 const API_PATHS = {
   generateDescription: "/api/generate-description",
   moderateListing: "/api/moderate-listing",
@@ -33,6 +33,16 @@ const imageFileStatus = document.getElementById("imageFileStatus");
 const imagePreview = document.getElementById("imagePreview");
 const imagePreviewThumb = document.getElementById("imagePreviewThumb");
 const removeImageButton = document.getElementById("removeImageButton");
+let selectedImageFile = null;
+
+console.debug("[TwojBazar WWW] image inputs", {
+  imageInputFound: Boolean(imageInput),
+  imageGalleryInputFound: Boolean(imageGalleryInput),
+  imageCameraTriggerFound: Boolean(imageCameraTrigger),
+  imageGalleryTriggerFound: Boolean(imageGalleryTrigger),
+  imageFileStatusFound: Boolean(imageFileStatus),
+  imagePreviewFound: Boolean(imagePreview),
+});
 const featuresList = document.getElementById("featuresList");
 const featuresDataInput = document.getElementById("featuresData");
 const titleInput = document.getElementById("title");
@@ -108,7 +118,7 @@ function setStatus(element, message, type = "") {
 }
 
 async function readErrorResponse(response) {
-  const fallbackMessage = `Błąd serwera: ${response.status}`;
+  const fallbackMessage = `BÅ‚Ä…d serwera: ${response.status}`;
 
   try {
     const data = await response.clone().json();
@@ -169,7 +179,7 @@ async function fetchWithApiFallback(path, options = {}) {
     }
   }
 
-  throw lastError || new Error("Nie udało się połączyć z API.");
+  throw lastError || new Error("Nie udaÅ‚o siÄ™ poÅ‚Ä…czyÄ‡ z API.");
 }
 
 function normalizeSpaces(value) {
@@ -265,7 +275,7 @@ function updatePriceField() {
   const currency = getCurrencyForCountry(countrySelect?.value);
 
   if (priceHint) {
-    priceHint.textContent = `Wpisz kwotę w ${currency}.`;
+    priceHint.textContent = `Wpisz kwotÄ™ w ${currency}.`;
   }
 
   if (priceInput) {
@@ -337,16 +347,18 @@ function readImageAsDataUrl(file) {
 
     const reader = new FileReader();
     reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () => reject(new Error("Nie udało się odczytać zdjęcia."));
+    reader.onerror = () => reject(new Error("Nie udaÅ‚o siÄ™ odczytaÄ‡ zdjÄ™cia."));
     reader.readAsDataURL(file);
   });
 }
 
 function getSelectedImageFile() {
-  return imageInput?.files?.[0] || imageGalleryInput?.files?.[0] || null;
+  return selectedImageFile;
 }
 
 function resetImageSelection() {
+  selectedImageFile = null;
+
   if (imageInput) {
     imageInput.value = "";
   }
@@ -367,6 +379,7 @@ function resetImageSelection() {
     imagePreview.classList.add("hidden");
   }
 
+  console.debug("[TwojBazar WWW] resetImageSelection");
   setFieldState("image", false);
 }
 
@@ -378,7 +391,7 @@ async function updateImagePreview(file) {
 
   if (!file.type.startsWith("image/")) {
     resetImageSelection();
-    setStatus(aiStatus, "Wybrany plik nie jest obrazem. Dodaj zdjęcie produktu lub usługi.", "error");
+    setStatus(aiStatus, "Wybrany plik nie jest obrazem. Dodaj zdjÄ™cie produktu lub usÅ‚ugi.", "error");
     return;
   }
 
@@ -469,17 +482,23 @@ function autofillGeneratedContent(payload) {
 
 async function generateListingFromImage() {
   const selectedImage = getSelectedImageFile();
+  console.debug("[TwojBazar WWW] generateListingFromImage selected file", {
+    hasFile: Boolean(selectedImage),
+    fileName: selectedImage?.name || null,
+    fileSize: selectedImage?.size || 0,
+    fileType: selectedImage?.type || null,
+  });
 
   if (!selectedImage) {
     setFieldState("image", false);
-    setStatus(aiStatus, "Dodaj zdjęcie, aby wygenerować opis ze zdjęcia.", "error");
+    setStatus(aiStatus, "Dodaj zdjÄ™cie, aby wygenerowaÄ‡ opis ze zdjÄ™cia.", "error");
     return;
   }
 
   setFieldState("image", true);
-  setStatus(aiStatus, "Analizuję zdjęcie i przygotowuję propozycję treści...", "");
+  setStatus(aiStatus, "AnalizujÄ™ zdjÄ™cie i przygotowujÄ™ propozycjÄ™ treÅ›ci...", "");
   generateFromImageButton.disabled = true;
-  generateFromImageButton.textContent = "⏳ Analizuję zdjęcie...";
+  generateFromImageButton.textContent = "â³ AnalizujÄ™ zdjÄ™cie...";
 
   const formData = new FormData();
   formData.append("image", selectedImage);
@@ -507,7 +526,7 @@ async function generateListingFromImage() {
   } catch (error) {
     const errorMessage = error instanceof Error
       ? error.message
-      : "Nie udało się wygenerować opisu ze zdjęcia.";
+      : "Nie udaÅ‚o siÄ™ wygenerowaÄ‡ opisu ze zdjÄ™cia.";
 
     setStatus(
       aiStatus,
@@ -519,7 +538,7 @@ async function generateListingFromImage() {
     });
   } finally {
     generateFromImageButton.disabled = false;
-    generateFromImageButton.textContent = "✨ Uzupełnij ogłoszenie z AI";
+    generateFromImageButton.textContent = "âœ¨ UzupeÅ‚nij ogÅ‚oszenie z AI";
   }
 }
 
@@ -527,17 +546,22 @@ if (generateFromImageButton) {
   generateFromImageButton.addEventListener("click", generateListingFromImage);
 }
 async function handleImageSelection(activeInput, otherInput) {
+  const selectedFile = activeInput?.files?.[0] || null;
+  selectedImageFile = selectedFile;
+  console.debug("[TwojBazar WWW] handleImageSelection", { activeInputId: activeInput?.id || null, otherInputId: otherInput?.id || null, hasFile: Boolean(selectedFile), fileName: selectedFile?.name || null, fileSize: selectedFile?.size || 0, fileType: selectedFile?.type || null });
+
   if (otherInput) {
     otherInput.value = "";
   }
 
-  await updateImagePreview(activeInput?.files?.[0]);
+  await updateImagePreview(selectedFile);
   setStatus(aiStatus, "", "");
 }
 
 if (imageCameraTrigger && imageInput) {
   imageCameraTrigger.addEventListener("click", (event) => {
     event.preventDefault();
+    console.debug("[TwojBazar WWW] camera trigger click");
     imageInput.click();
   });
 }
@@ -545,18 +569,21 @@ if (imageCameraTrigger && imageInput) {
 if (imageGalleryTrigger && imageGalleryInput) {
   imageGalleryTrigger.addEventListener("click", (event) => {
     event.preventDefault();
+    console.debug("[TwojBazar WWW] gallery trigger click");
     imageGalleryInput.click();
   });
 }
 
 if (imageInput) {
   imageInput.addEventListener("change", async () => {
+    console.debug("[TwojBazar WWW] camera input change", { hasFile: Boolean(imageInput.files?.[0]), fileName: imageInput.files?.[0]?.name || null });
     await handleImageSelection(imageInput, imageGalleryInput);
   });
 }
 
 if (imageGalleryInput) {
   imageGalleryInput.addEventListener("change", async () => {
+    console.debug("[TwojBazar WWW] gallery input change", { hasFile: Boolean(imageGalleryInput.files?.[0]), fileName: imageGalleryInput.files?.[0]?.name || null });
     await handleImageSelection(imageGalleryInput, imageInput);
   });
 }
@@ -608,6 +635,12 @@ if (form) {
 
     try {
       const selectedImage = getSelectedImageFile();
+      console.debug("[TwojBazar WWW] submit selected file", {
+        hasFile: Boolean(selectedImage),
+        fileName: selectedImage?.name || null,
+        fileSize: selectedImage?.size || 0,
+        fileType: selectedImage?.type || null,
+      });
       const listing = {
         title: normalizeSpaces(titleInput?.value || ""),
         category: normalizeCategory(categorySelect?.value || ""),
@@ -635,12 +668,12 @@ if (form) {
       }
 
       if (!moderationResult.allowed) {
-        setStatus(formStatus, "Ogłoszenie narusza zasady serwisu.", "error");
+        setStatus(formStatus, "OgÅ‚oszenie narusza zasady serwisu.", "error");
         return;
       }
 
       const createdListing = await createListing(listing, selectedImage);
-      setStatus(formStatus, "Ogłoszenie zostało zapisane. Otwieram prywatny link do zarządzania...", "success");
+      setStatus(formStatus, "OgÅ‚oszenie zostaÅ‚o zapisane. Otwieram prywatny link do zarzÄ…dzania...", "success");
 
       if (createdListing?.managementUrl) {
         window.location.href = createdListing.managementUrl;
@@ -652,7 +685,7 @@ if (form) {
       console.error("Listing save error:", error);
       setStatus(
         formStatus,
-        error instanceof Error ? error.message : "Nie udalo sie zapisac ogloszenia. Spr�buj ponownie.",
+        error instanceof Error ? error.message : "Nie udalo sie zapisac ogloszenia. Spróbuj ponownie.",
         "error"
       );
     }
@@ -668,6 +701,12 @@ if (isQuickAiMode && aiQuickStartSection) {
     setStatus(aiStatus, "Dodaj zdjecie lub zrob zdjecie aparatem, a AI wypelni kategorie, tytul, opis i najwazniejsze cechy.", "");
   });
 }
+
+
+
+
+
+
 
 
 

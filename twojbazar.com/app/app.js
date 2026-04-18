@@ -1,4 +1,4 @@
-const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
+﻿const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
 const LISTINGS_API_PATH = "/api/listings";
 const MANAGE_API_PATH = "/api/manage";
 const LISTINGS_JSON_URL = "../listings.json";
@@ -429,6 +429,13 @@ async function moderateListingContent(payload) {
 }
 
 async function generateListingFromImage(file) {
+  console.debug("[TwojBazar APP] generateListingFromImage selected file", {
+    hasFile: Boolean(file),
+    fileName: file?.name || null,
+    fileSize: file?.size || 0,
+    fileType: file?.type || null,
+  });
+
   const formData = new FormData();
   formData.append("image", file);
 
@@ -438,7 +445,7 @@ async function generateListingFromImage(file) {
   });
 
   if (!response.ok) {
-    throw new Error(`B\u0142\u0105d AI: ${response.status}`);
+    throw new Error(await readApiError(response, "Blad AI"));
   }
 
   return response.json();
@@ -538,7 +545,7 @@ function renderHomeView(listings, query = "", country = getDefaultCountry(), cat
     <section class="screen hero-card">
       <p class="hero-kicker">Portal Polonii za granic\u0105</p>
       <h2 class="hero-title">Og\u0142oszenia dla Polak\u00f3w w Skandynawii</h2>
-      <p class="hero-text">Praca dam, Pok�j wynajme, Transport i Pomoc / formalnosci w Szwecji, Norwegii i Danii.</p>
+      <p class="hero-text">Praca dam, Pokój wynajme, Transport i Pomoc / formalnosci w Szwecji, Norwegii i Danii.</p>
       <div class="hero-actions hero-actions-primary">
         <a class="button button-accent" href="#add">Dodaj ogloszenie</a>
       </div>
@@ -900,12 +907,15 @@ function renderAddView(quickAi = false) {
     }
   });
 
+  let selectedImageFile = null;
+
   function getSelectedImageFile() {
-    return imageInput?.files?.[0] || imageGalleryInput?.files?.[0] || null;
+    return selectedImageFile;
   }
 
   async function updateImagePreview(file) {
     if (!file) {
+      selectedImageFile = null;
       imageInput.value = "";
       if (imageGalleryInput) {
         imageGalleryInput.value = "";
@@ -917,6 +927,7 @@ function renderAddView(quickAi = false) {
     }
 
     if (!file.type.startsWith("image/")) {
+      selectedImageFile = null;
       imageInput.value = "";
       imageStatus.textContent = "Nie wybrano pliku";
       imagePreview.classList.add("hidden");
@@ -929,31 +940,48 @@ function renderAddView(quickAi = false) {
     imagePreviewThumb.src = await readImageAsDataUrl(file);
     imagePreview.classList.remove("hidden");
   }
+  console.debug("[TwojBazar APP] image inputs", {
+    imageInputFound: Boolean(imageInput),
+    imageGalleryInputFound: Boolean(imageGalleryInput),
+    imageCameraTriggerFound: Boolean(imageCameraTrigger),
+    imageGalleryTriggerFound: Boolean(imageGalleryTrigger),
+    imageStatusFound: Boolean(imageStatus),
+    imagePreviewFound: Boolean(imagePreview),
+  });
+
   async function handleImageSelection(activeInput, otherInput) {
+    const selectedFile = activeInput?.files?.[0] || null;
+    selectedImageFile = selectedFile;
+    console.debug("[TwojBazar APP] handleImageSelection", { activeInputId: activeInput?.id || null, otherInputId: otherInput?.id || null, hasFile: Boolean(selectedFile), fileName: selectedFile?.name || null, fileSize: selectedFile?.size || 0, fileType: selectedFile?.type || null });
+
     if (otherInput) {
       otherInput.value = "";
     }
 
-    await updateImagePreview(activeInput?.files?.[0]);
+    await updateImagePreview(selectedFile);
     aiStatus.textContent = "";
     aiStatus.className = "status";
   }
 
   imageCameraTrigger?.addEventListener("click", (event) => {
     event.preventDefault();
+    console.debug("[TwojBazar APP] camera trigger click");
     imageInput?.click();
   });
 
   imageGalleryTrigger?.addEventListener("click", (event) => {
     event.preventDefault();
+    console.debug("[TwojBazar APP] gallery trigger click");
     imageGalleryInput?.click();
   });
 
   imageInput?.addEventListener("change", async () => {
+    console.debug("[TwojBazar APP] camera input change", { hasFile: Boolean(imageInput?.files?.[0]), fileName: imageInput?.files?.[0]?.name || null });
     await handleImageSelection(imageInput, imageGalleryInput);
   });
 
   imageGalleryInput?.addEventListener("change", async () => {
+    console.debug("[TwojBazar APP] gallery input change", { hasFile: Boolean(imageGalleryInput?.files?.[0]), fileName: imageGalleryInput?.files?.[0]?.name || null });
     await handleImageSelection(imageGalleryInput, imageInput);
   });
 
@@ -965,6 +993,12 @@ function renderAddView(quickAi = false) {
 
   aiButton?.addEventListener("click", async () => {
     const selectedImage = getSelectedImageFile();
+    console.debug("[TwojBazar APP] AI button selected file", {
+      hasFile: Boolean(selectedImage),
+      fileName: selectedImage?.name || null,
+      fileSize: selectedImage?.size || 0,
+      fileType: selectedImage?.type || null,
+    });
 
     if (!selectedImage) {
       aiStatus.textContent = "Dodaj zdj\u0119cie, aby skorzysta\u0107 z AI.";
@@ -988,7 +1022,7 @@ function renderAddView(quickAi = false) {
       aiStatus.className = "status success";
     } catch (error) {
       console.error("Mobile AI generation error:", error);
-      aiStatus.textContent = "Nie uda\u0142o si\u0119 wygenerowa\u0107 opisu ze zdj\u0119cia. Sprawd\u017a po\u0142\u0105czenie z backendem i spr\u00f3buj ponownie.";
+      aiStatus.textContent = error instanceof Error ? error.message : "Nie udało się wygenerować opisu ze zdjęcia.";
       aiStatus.className = "status error";
     } finally {
       aiButton.disabled = false;
@@ -1000,6 +1034,12 @@ function renderAddView(quickAi = false) {
     event.preventDefault();
 
     const selectedImage = getSelectedImageFile();
+    console.debug("[TwojBazar APP] submit selected file", {
+      hasFile: Boolean(selectedImage),
+      fileName: selectedImage?.name || null,
+      fileSize: selectedImage?.size || 0,
+      fileType: selectedImage?.type || null,
+    });
     const listing = {
       title: normalizeSpaces(document.getElementById("mobileTitle").value),
       category: normalizeCategory(document.getElementById("mobileCategory").value),
@@ -1065,7 +1105,7 @@ async function renderManageView(token) {
     appMain.innerHTML = `
       <section class="screen app-empty">
         <h2 class="detail-title">Brak linku zarzadzania</h2>
-        <p class="section-text">Otw�rz poprawny prywatny link do zarzadzania ogloszeniem.</p>
+        <p class="section-text">Otwórz poprawny prywatny link do zarzadzania ogloszeniem.</p>
       </section>
     `;
     return;
@@ -1309,6 +1349,12 @@ if (!window.location.hash) {
 } else {
   renderRoute();
 }
+
+
+
+
+
+
 
 
 

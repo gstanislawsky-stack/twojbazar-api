@@ -1,4 +1,4 @@
-import "dotenv/config";
+锘縤mport "dotenv/config";
 import express from "express";
 import multer from "multer";
 import OpenAI from "openai";
@@ -23,8 +23,8 @@ const ALLOWED_CATEGORIES = [
   "Praca szukam",
   "Mieszkanie wynajme",
   "Mieszkanie szukam",
-  "Pok骿 wynajme",
-  "Pok骿 szukam",
+  "Pok贸j wynajme",
+  "Pok贸j szukam",
   "Uslugi oferuje",
   "Uslugi szukam",
   "Sprzedam",
@@ -51,6 +51,19 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const uploadLimits = {
+  fileSize: 10 * 1024 * 1024,
+};
+
+function imageFileFilter(_req, file, callback) {
+  if (!file.mimetype.startsWith("image/")) {
+    callback(new Error("Only image uploads are allowed."));
+    return;
+  }
+
+  callback(null, true);
+}
+
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, callback) => {
@@ -62,18 +75,16 @@ const upload = multer({
       callback(null, `${Date.now()}-${randomUUID()}${safeExtension}`);
     },
   }),
-  limits: {
-    fileSize: 10 * 1024 * 1024,
-  },
-  fileFilter: (_req, file, callback) => {
-    if (!file.mimetype.startsWith("image/")) {
-      callback(new Error("Only image uploads are allowed."));
-      return;
-    }
-
-    callback(null, true);
-  },
+  limits: uploadLimits,
+  fileFilter: imageFileFilter,
 });
+
+const aiUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: uploadLimits,
+  fileFilter: imageFileFilter,
+});
+
 const listingUpload = upload.fields([
   { name: "image", maxCount: 1 },
   { name: "images", maxCount: 6 },
@@ -132,11 +143,11 @@ function normalizeCategory(value) {
   }
 
   if ((normalizedValue.includes("pokoj") || normalizedValue.includes("pok")) && normalizedValue.includes("szuk")) {
-    return "Pok骿 szukam";
+    return "Pok贸j szukam";
   }
 
   if (normalizedValue.includes("pokoj") || normalizedValue.includes("pok")) {
-    return "Pok骿 wynajme";
+    return "Pok贸j wynajme";
   }
 
   if (normalizedValue.includes("uslug") && normalizedValue.includes("szuk")) {
@@ -687,7 +698,7 @@ async function handleGenerateDescription(req, res) {
     const response = await openai.responses.create({
       model,
       instructions:
-        "Generate realistic marketplace listings in natural, user-friendly Polish. The output must sound like a real classified ad written by a person, not like marketing copy. Keep the description practical, clear and easy to scan. The description must be 3 to 5 sentences long. Do not invent brands, technical specifications, dimensions, defects, accessories, locations, prices or condition details unless they are clearly visible in the image. If something is uncertain, keep the wording general and cautious. Use marketplace-friendly language suitable for classifieds. The category must be exactly one of: Praca dam, Praca szukam, Mieszkanie wynajme, Mieszkanie szukam, Pok骿 wynajme, Pok骿 szukam, Uslugi oferuje, Uslugi szukam, Sprzedam, Kupie, Transport, Pomoc / formalnosci, Poznam ludzi, Inne. If no category clearly fits, use Inne.",
+        "Generate realistic marketplace listings in natural, user-friendly Polish. The output must sound like a real classified ad written by a person, not like marketing copy. Keep the description practical, clear and easy to scan. The description must be 3 to 5 sentences long. Do not invent brands, technical specifications, dimensions, defects, accessories, locations, prices or condition details unless they are clearly visible in the image. If something is uncertain, keep the wording general and cautious. Use marketplace-friendly language suitable for classifieds. The category must be exactly one of: Praca dam, Praca szukam, Mieszkanie wynajme, Mieszkanie szukam, Pok贸j wynajme, Pok贸j szukam, Uslugi oferuje, Uslugi szukam, Sprzedam, Kupie, Transport, Pomoc / formalnosci, Poznam ludzi, Inne. If no category clearly fits, use Inne.",
       input: [
         {
           role: "user",
@@ -695,7 +706,7 @@ async function handleGenerateDescription(req, res) {
             {
               type: "input_text",
               text:
-                "Przeanalizuj zdjecie i wygeneruj dane ogloszenia po polsku. Tytul ma byc kr髏ki, naturalny i wiarygodny. Kategoria ma byc wybrana dokladnie z tej listy: Praca dam, Praca szukam, Mieszkanie wynajme, Mieszkanie szukam, Pok骿 wynajme, Pok骿 szukam, Uslugi oferuje, Uslugi szukam, Sprzedam, Kupie, Transport, Pomoc / formalnosci, Poznam ludzi, Inne. Nie tw髍z nowych kategorii i nie zmieniaj nazw. Jesli nic nie pasuje, ustaw Inne. Opis ma miec od 3 do 5 zdan, brzmiec naturalnie i nadawac sie do portalu ogloszeniowego. Pisz jasno, konkretnie i przyjaznie dla uzytkownika. Nie dopisuj informacji, kt髍ych nie da sie rozsadnie wywnioskowac ze zdjecia. Lista features powinna zawierac kr髏kie, praktyczne cechy widoczne na zdjeciu lub bardzo ostrozne obserwacje. Zwr骳 wylacznie dane zgodne z wymaganym schematem JSON.",
+                "Przeanalizuj zdjecie i wygeneruj dane ogloszenia po polsku. Tytul ma byc kr贸tki, naturalny i wiarygodny. Kategoria ma byc wybrana dokladnie z tej listy: Praca dam, Praca szukam, Mieszkanie wynajme, Mieszkanie szukam, Pok贸j wynajme, Pok贸j szukam, Uslugi oferuje, Uslugi szukam, Sprzedam, Kupie, Transport, Pomoc / formalnosci, Poznam ludzi, Inne. Nie tw贸rz nowych kategorii i nie zmieniaj nazw. Jesli nic nie pasuje, ustaw Inne. Opis ma miec od 3 do 5 zdan, brzmiec naturalnie i nadawac sie do portalu ogloszeniowego. Pisz jasno, konkretnie i przyjaznie dla uzytkownika. Nie dopisuj informacji, kt贸rych nie da sie rozsadnie wywnioskowac ze zdjecia. Lista features powinna zawierac kr贸tkie, praktyczne cechy widoczne na zdjeciu lub bardzo ostrozne obserwacje. Zwr贸c wylacznie dane zgodne z wymaganym schematem JSON.",
             },
             {
               type: "input_image",
@@ -856,8 +867,8 @@ async function handleModerateListing(req, res) {
   }
 }
 
-app.post("/api/generate-description", upload.single("image"), handleGenerateDescription);
-app.post("/api/listings/generate-from-image", upload.single("image"), handleGenerateDescription);
+app.post("/api/generate-description", aiUpload.single("image"), handleGenerateDescription);
+app.post("/api/listings/generate-from-image", aiUpload.single("image"), handleGenerateDescription);
 app.post("/api/moderate-listing", handleModerateListing);
 
 app.use((error, _req, res, _next) => {
@@ -902,6 +913,7 @@ app.use((error, _req, res, _next) => {
 app.listen(port, () => {
   console.log(`TwojBazar server running on port ${port}`);
 });
+
 
 
 
