@@ -1,13 +1,20 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Twoj Bazar - mobilna wersja portalu og&#322;osze&#324; dla Polak&oacute;w w Skandynawii.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="Twoj Bazar - mobilna wersja portalu ogłoszeń dla Polaków w Skandynawii.">
   <title>Twoj Bazar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="app-body">
   <div class="app-background" aria-hidden="true"></div>
   <div class="app-shell">
     <header class="app-topbar">
@@ -20,8 +27,8 @@
           <h1 class="topbar-title" id="topbarTitle">Twoj Bazar</h1>
         </div>
       </div>
-      <button class="topbar-action" id="topbarAction" type="button" aria-label="Przejd&#378; do konta">
-        Konto
+      <button class="topbar-action" id="topbarAction" type="button" aria-label="Przejd&#378; do dodawania og&#322;oszenia">
+        Dodaj
       </button>
     </header>
 
@@ -34,8 +41,8 @@
       <a class="bottom-nav-link" data-route="add" href="#add">
         <span>Dodaj</span>
       </a>
-      <a class="bottom-nav-link" data-route="account" href="#account">
-        <span>Konto</span>
+      <a class="bottom-nav-link" data-route="help" href="#help">
+        <span>Pomoc</span>
       </a>
     </nav>
   </div>

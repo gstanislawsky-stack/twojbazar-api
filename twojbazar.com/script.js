@@ -119,6 +119,20 @@ function normalizeCategory(value) {
   return "Inne";
 }
 
+function normalizeStatus(value) {
+  const normalizedValue = normalizeText(value);
+
+  if (normalizedValue === "inactive") {
+    return "inactive";
+  }
+
+  if (normalizedValue === "deleted") {
+    return "deleted";
+  }
+
+  return "active";
+}
+
 function getInitialCountryFilter() {
   const activeChip = [...countryChips].find((chip) => chip.classList.contains("active"));
   return getCountryFilterValue(countrySelect?.value || activeChip?.dataset.countryFilter || "all");
@@ -140,8 +154,9 @@ function mergeListings(listings = []) {
     const id = String(listing?.id || "").trim();
     const country = getCountryFilterValue(listing?.country);
     const category = normalizeCategory(listing?.category);
+    const status = normalizeStatus(listing?.status);
 
-    if (!id || country === "all") {
+    if (!id || country === "all" || status !== "active") {
       return;
     }
 
@@ -181,7 +196,7 @@ async function fetchListings() {
     const response = await fetch(LISTINGS_JSON_URL, { cache: "no-store" });
 
     if (!response.ok) {
-      throw new Error(`Blad pobierania listings.json: ${response.status}`);
+      throw new Error(`Błąd pobierania listings.json: ${response.status}`);
     }
 
     const data = await response.json();
@@ -197,7 +212,7 @@ async function fetchListings() {
       const response = await fetch(url, { cache: "no-store" });
 
       if (!response.ok) {
-        throw new Error(`Blad pobierania ogloszen z API: ${response.status}`);
+        throw new Error(`Błąd pobierania ogłoszeń z API: ${response.status}`);
       }
 
       const data = await response.json();
@@ -276,7 +291,8 @@ function formatPrice(price, currency = "EUR") {
     return "Cena do ustalenia";
   }
 
-  return /[a-zA-Zaceln�szzACELN�SZZ]/.test(normalizedPrice)
+  // Check if price contains Polish, Swedish, Norwegian, or Danish characters
+  return /[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻåäöÅÄÖæøÆØ]/.test(normalizedPrice)
     ? normalizedPrice
     : `${normalizedPrice} ${currency}`;
 }
@@ -307,7 +323,7 @@ function decorateCardForDetails(card, id) {
   card.dataset.id = id;
   card.tabIndex = 0;
   card.setAttribute("role", "link");
-  card.setAttribute("aria-label", `Otw�rz ogloszenie: ${card.dataset.title || "szczeg�ly"}`);
+  card.setAttribute("aria-label", `Otwórz ogłoszenie: ${card.dataset.title || "szczegóły"}`);
 
   const detailsLink = card.querySelector(".listing-footer a");
   if (detailsLink) {
@@ -343,14 +359,14 @@ function createListingCard(listing) {
     <div class="listing-content">
       <div class="listing-topline">
         <span>${escapeHtml(category)}</span>
-        <span>${escapeHtml(city)} � ${escapeHtml(country)}</span>
+        <span>${escapeHtml(city)} • ${escapeHtml(country)}</span>
       </div>
-      <h3>${escapeHtml(listing.title || "Nowe ogloszenie")}</h3>
+      <h3>${escapeHtml(listing.title || "Nowe ogłoszenie")}</h3>
       <p class="price">${formatPrice(listing.price, currency)}</p>
       <p>${escapeHtml(listing.description || "Brak opisu ogloszenia.")}</p>
       <div class="listing-footer">
         <span>Nowe</span>
-        <a href="${getListingUrl(id)}">Szczeg�ly</a>
+        <a href="${getListingUrl(id)}">Szczególy</a>
       </div>
     </div>
   `;
@@ -388,7 +404,7 @@ function decorateExistingCards() {
 
     if (!card.dataset.city) {
       const locationText = card.querySelector(".listing-topline span:last-child")?.textContent || "";
-      card.dataset.city = locationText.split("�")[0]?.trim() || "";
+      card.dataset.city = locationText.split("•")[0]?.trim() || "";
     }
 
     if (!card.dataset.price) {
@@ -397,7 +413,7 @@ function decorateExistingCards() {
 
     if (!card.dataset.country) {
       const locationText = card.querySelector(".listing-topline span:last-child")?.textContent || "";
-      const countryText = locationText.split("�")[1]?.trim() || "";
+      const countryText = locationText.split("•")[1]?.trim() || "";
       card.dataset.country = getCountryFilterValue(countryText);
     } else {
       card.dataset.country = getCountryFilterValue(card.dataset.country);
@@ -615,6 +631,8 @@ async function initHomepage() {
 }
 
 initHomepage();
+
+
 
 
 

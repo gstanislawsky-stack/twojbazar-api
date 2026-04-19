@@ -2,14 +2,20 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Ogloszenia dla Polak�w w Szwecji, Norwegii i Danii. TwojBazar laczy prace, mieszkania, pokoje, uslugi i transport dla Polonii w Skandynawii.">
-  <title>Ogloszenia dla Polak�w w Szwecji, Norwegii i Danii | Polonia w Skandynawii | TwojBazar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="description" content="Ogłoszenia dla Polaków w Szwecji, Norwegii i Danii. TwojBazar łączy pracę, mieszkania, pokoje, usługi i transport dla Polonii w Skandynawii.">
+  <title>Ogłoszenia dla Polaków w Szwecji, Norwegii i Danii | Polonia w Skandynawii | TwojBazar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="page-shell">
-    <header class="navbar">
+    <header class="navbar" id="siteHeader">
       <a href="#start" class="logo">
         <span class="logo-mark">TB</span>
         <span class="logo-text">TwojBazar</span>
@@ -18,7 +24,7 @@
       <button
         class="menu-toggle"
         type="button"
-        aria-label="Otw�rz menu"
+        aria-label="Otwórz menu"
         aria-expanded="false"
         aria-controls="site-navigation"
       >
@@ -26,60 +32,56 @@
         <span></span>
         <span></span>
       </button>
+      <div class="nav-center">
 
       <nav class="nav-links" id="site-navigation">
         <a href="#start">Start</a>
-        <a href="#praca">Praca dam</a>
-        <a href="#mieszkania">Mieszkanie wynajme</a>
-        <a href="#uslugi">Uslugi oferuje</a>
-        <a href="#kupie-sprzedam">Sprzedam</a>
-        <a href="#transport">Transport</a>
-        <a href="pomoc.html">Pomoc</a>
-        <a href="#spolecznosc">Poznam ludzi</a>
+        <a href="#kategorie">Kategorie</a>
+        <a href="#kontakt">Kontakt</a>
       </nav>
+      </div>
 
       <div class="navbar-cta">
-        <a href="add-listing.html?mode=ai#ai-quick-start" class="nav-cta">Dodaj ze zdjecia AI</a>
+        <a href="add-listing.html" class="nav-cta">Dodaj ze zdjęcia AI</a>
       </div>
     </header>
 
-    <main>
+    <main class="site-main">
       <section class="hero" id="start">
         <div class="hero-copy">
-          <span class="hero-badge">Portal Polak�w w Skandynawii</span>
-          <h1>Ogloszenia dla Polak�w w Szwecji, Norwegii i Danii</h1>
-          <p class="hero-subtitle">Praca dam, Pok�j wynajme, Transport i Pomoc / formalnosci w Szwecji, Norwegii i Danii</p>
+          <span class="hero-badge">Portal Polaków w Skandynawii</span>
+          <h1>Ogłoszenia dla Polaków w Szwecji, Norwegii i Danii</h1>
+          <p class="hero-subtitle">Praca dam, Pokój wynajmę, Transport i Pomoc / formalności w Szwecji, Norwegii i Danii</p>
 
           <form class="search-bar" id="searchForm">
-            <label class="sr-only" for="searchInput">Wyszukaj ogloszenia</label>
+            <label class="sr-only" for="searchInput">Wyszukaj ogłoszenia</label>
             <input
               id="searchInput"
               type="text"
-              placeholder="Szukaj: praca dam, pok�j wynajme, transport, pomoc / formalnosci..."
+              placeholder="Szukaj: praca dam, pokój wynajmę, transport, pomoc / formalności..."
             >
             <button type="submit" class="button button-primary">Szukaj</button>
           </form>
 
           <div class="hero-actions">
-            <a href="#ogloszenia" class="button button-secondary">Zobacz ogloszenia</a>
-            <a href="add-listing.html?mode=ai#ai-quick-start" class="button button-primary">Dodaj ze zdjecia AI</a>
+            <a href="#ogloszenia" class="button button-secondary">Zobacz ogłoszenia</a>
+            <a href="add-listing.html?mode=ai#ai-quick-start" class="button button-primary">Dodaj ze zdjęcia AI</a>
           </div>
         </div>
 
-        <aside class="hero-card" aria-label="Wyr�znione ogloszenia Polonii">
+        <aside class="hero-card" aria-label="Wyróżnione ogłoszenia Polonii">
           <div class="featured-panel">
             <div class="featured-header">
               <span class="featured-badge">Przydatne w Skandynawii</span>
-              <a href="#ogloszenia">Przegladaj ogloszenia</a>
             </div>
 
             <a class="featured-link" href="listing.html?id=demo-3">
               <article class="featured-offer featured-offer-main">
                 <div class="featured-image gradient-two"></div>
                 <div class="featured-content">
-                  <p class="featured-meta">Sztokholm � Szwecja</p>
-                  <h2>Pok�j wynajme od zaraz</h2>
-                  <p>Pok�j dla jednej osoby, blisko komunikacji i sklepu polskiego.</p>
+                  <p class="featured-meta">Sztokholm - Szwecja</p>
+                  <h2>Pokój wynajmę od zaraz</h2>
+                  <p>Pokój dla jednej osoby, blisko komunikacji i sklepu polskiego.</p>
                   <div class="featured-footer">
                     <strong>5 200 SEK / mies.</strong>
                     <span>Przydatne po polsku</span>
@@ -94,7 +96,7 @@
                   <div class="mini-offer-thumb gradient-one"></div>
                   <div>
                     <p>Praca dam: magazyn</p>
-                    <strong>G�teborg</strong>
+                    <strong>Göteborg</strong>
                   </div>
                 </article>
               </a>
@@ -102,8 +104,8 @@
                 <article class="mini-offer">
                   <div class="mini-offer-thumb gradient-six"></div>
                   <div>
-                    <p>Pomoc w formalnosciach</p>
-                    <strong>G�teborg</strong>
+                    <p>Pomoc w formalnościach</p>
+                    <strong>Göteborg</strong>
                   </div>
                 </article>
               </a>
@@ -116,35 +118,35 @@
         <div class="section-heading">
           <div>
             <span>Sekcje</span>
-            <h2>Najwazniejsze sprawy zycia za granica</h2>
+            <h2>Najważniejsze sprawy życia za granicą</h2>
           </div>
-          <p>Struktura dopasowana do oficjalnych kategorii ogloszen uzywanych w formularzu dodawania ogloszenia.</p>
+          <p>Struktura dopasowana do oficjalnych kategorii ogłoszeń używanych w formularzu dodawania ogłoszenia.</p>
         </div>
 
         <div class="category-grid">
           <article class="category-card" id="praca" data-filter-target="praca dam">
             <div class="category-icon">01</div>
-            <h3>Praca dam</h3>
-            <p>Oferty pracy i ogloszenia os�b szukajacych zatrudnienia z waznym kontekstem kraju i miasta.</p>
+            <h3>Praca</h3>
+            <p>Oferty pracy i ogłoszenia osób szukających zatrudnienia z ważnym kontekstem kraju i miasta.</p>
             <span class="category-meta">Praca szukam</span>
           </article>
-          <article class="category-card" id="mieszkania" data-filter-target="mieszkanie wynajme">
+          <article class="category-card" id="mieszkania" data-filter-target="mieszkanie wynajm?">
             <div class="category-icon">02</div>
-            <h3>Mieszkanie wynajme</h3>
-            <p>Pokoje, mieszkania i ogloszenia od os�b, kt�re szukaja stabilnego lokum w nowym kraju.</p>
-            <span class="category-meta">Mieszkanie szukam, Pok�j wynajme, Pok�j szukam</span>
+            <h3>Mieszkania</h3>
+            <p>Pokoje, mieszkania i ogłoszenia od osób, które szukają stabilnego lokum w nowym kraju.</p>
+            <span class="category-meta">Mieszkanie szukam, Pokój wynajmę, Pokój szukam</span>
           </article>
-          <article class="category-card" id="uslugi" data-filter-target="uslugi oferuje">
+          <article class="category-card" id="uslugi" data-filter-target="usługi oferuję">
             <div class="category-icon">03</div>
-            <h3>Uslugi oferuje</h3>
-            <p>Fachowcy, tlumaczenia, ksiegowosc oraz pomoc w urzedach, dokumentach i codziennych formalnosciach.</p>
-            <span class="category-meta">Uslugi szukam, Pomoc / formalnosci</span>
+            <h3>Usługi</h3>
+            <p>Fachowcy, tłumaczenia, przeprowadzki, sprzątanie i wsparcie lokalne.</p>
+            <span class="category-meta">Usługi oferuję, Usługi szukam, Pomoc / formalności</span>
           </article>
           <article class="category-card" id="kupie-sprzedam" data-filter-target="sprzedam">
             <div class="category-icon">04</div>
             <h3>Sprzedam</h3>
-            <p>Rzeczy codziennego uzytku, wyposazenie mieszkania, auta i ogloszenia kupna dla lokalnej spolecznosci.</p>
-            <span class="category-meta">Kupie, Inne</span>
+            <p>Rzeczy codziennego użytku, wyposażenie mieszkania, auta i ogłoszenia kupna dla lokalnej społeczności.</p>
+            <span class="category-meta">Kupię, Inne</span>
           </article>
           <article class="category-card" id="transport" data-filter-target="transport">
             <div class="category-icon">05</div>
@@ -155,7 +157,7 @@
           <article class="category-card" id="spolecznosc" data-filter-target="poznam ludzi">
             <div class="category-icon">06</div>
             <h3>Poznam ludzi</h3>
-            <p>Kontakty lokalne, wzajemna pomoc i ogloszenia spoleczne dla os�b, kt�re chca latwiej odnalezc sie za granica.</p>
+            <p>Kontakty lokalne, wzajemna pomoc i ogłoszenia społeczne dla osób, które chcą łatwiej odnaleźć się za granicą.</p>
             <span class="category-meta">Inne</span>
           </article>
         </div>
@@ -164,28 +166,28 @@
       <section class="listings" id="ogloszenia">
         <div class="section-heading">
           <div>
-            <span>Ogloszenia</span>
-            <h2>Znajdz pomocne ogloszenia w swoim kraju i miescie</h2>
+            <span>Ogłoszenia</span>
+            <h2>Znajdź ogłoszenie</h2>
           </div>
           <p>Filtruj po typie, kraju i lokalizacji, zeby szybciej dotrzec do wlasciwych ludzi i konkretnych informacji w Skandynawii.</p>
         </div>
 
         <div class="filter-group">
-          <p class="filter-group-label">Typ ogloszenia</p>
-          <div class="listing-filters" aria-label="Filtrowanie ogloszen po typie">
+          <p class="filter-group-label">Typ ogłoszenia</p>
+          <div class="listing-filters" aria-label="Filtrowanie ogłoszeń po typie">
             <button class="filter-chip active" type="button" data-filter="all">Wszystkie</button>
-            <button class="filter-chip" type="button" data-filter="praca dam">Praca dam</button>
+            <button class="filter-chip" type="button" data-filter="praca dam">Praca</button>
             <button class="filter-chip" type="button" data-filter="praca szukam">Praca szukam</button>
-            <button class="filter-chip" type="button" data-filter="pok�j wynajme">Pok�j wynajme</button>
-            <button class="filter-chip" type="button" data-filter="pok�j szukam">Pok�j szukam</button>
-            <button class="filter-chip" type="button" data-filter="mieszkanie wynajme">Mieszkanie wynajme</button>
+            <button class="filter-chip" type="button" data-filter="pokój wynajmę">Pokój wynajmę</button>
+            <button class="filter-chip" type="button" data-filter="pokój szukam">Pokój szukam</button>
+            <button class="filter-chip" type="button" data-filter="mieszkanie wynajm?">Mieszkania</button>
             <button class="filter-chip" type="button" data-filter="mieszkanie szukam">Mieszkanie szukam</button>
-            <button class="filter-chip" type="button" data-filter="uslugi oferuje">Uslugi oferuje</button>
-            <button class="filter-chip" type="button" data-filter="uslugi szukam">Uslugi szukam</button>
+            <button class="filter-chip" type="button" data-filter="usługi oferuję">Usługi</button>
+            <button class="filter-chip" type="button" data-filter="usługi szukam">Usługi szukam</button>
             <button class="filter-chip" type="button" data-filter="sprzedam">Sprzedam</button>
-            <button class="filter-chip" type="button" data-filter="kupie">Kupie</button>
+            <button class="filter-chip" type="button" data-filter="kupię">Kupię</button>
             <button class="filter-chip" type="button" data-filter="transport">Transport</button>
-            <button class="filter-chip" type="button" data-filter="pomoc / formalnosci">Pomoc / formalnosci</button>
+            <button class="filter-chip" type="button" data-filter="pomoc / formalności">Pomoc / formalności</button>
             <button class="filter-chip" type="button" data-filter="poznam ludzi">Poznam ludzi</button>
             <button class="filter-chip" type="button" data-filter="inne">Inne</button>
           </div>
@@ -200,13 +202,13 @@
             <option value="norwegia">Norwegia</option>
             <option value="dania">Dania</option>
           </select>
-          <div class="listing-filters country-filters" aria-label="Filtrowanie ogloszen po kraju">
+          <div class="listing-filters country-filters" aria-label="Filtrowanie ogłoszeń po kraju">
             <button class="filter-chip active" type="button" data-country-filter="all" data-i18n="filters.allCountries">Wszystkie kraje</button>
-            <button class="filter-chip" type="button" data-country-filter="szwecja" data-i18n="filters.sweden">???? Szwecja</button>
-            <button class="filter-chip" type="button" data-country-filter="norwegia" data-i18n="filters.norway">???? Norwegia</button>
-            <button class="filter-chip" type="button" data-country-filter="dania" data-i18n="filters.denmark">???? Dania</button>
+            <button class="filter-chip" type="button" data-country-filter="szwecja" data-i18n="filters.sweden">? Szwecja</button>
+            <button class="filter-chip" type="button" data-country-filter="norwegia" data-i18n="filters.norway">? Norwegia</button>
+            <button class="filter-chip" type="button" data-country-filter="dania" data-i18n="filters.denmark">? Dania</button>
           </div>
-          <p class="filter-group-label">Kolejne kraje wkr�tce</p>
+          <p class="filter-group-label">Kolejne kraje wkrótce</p>
         </div>
 
         <div class="filter-group">
@@ -220,21 +222,21 @@
         </div>
 
         <div class="listing-grid" id="listingGrid">
-          <article class="listing-card" data-title="Praca dam magazyn G�teborg" data-category="praca dam" data-country="szwecja" data-city="G�teborg">
+          <article class="listing-card" data-title="Praca dam magazyn Göteborg" data-category="praca dam" data-country="szwecja" data-city="Göteborg">
             <div class="listing-image gradient-one">
-              <span class="listing-badge">Praca dam</span>
+              <span class="listing-badge">Praca</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
-                <span>Praca dam</span>
-                <span>G�teborg � Szwecja</span>
+                <span>Praca</span>
+                <span>Göteborg - Szwecja</span>
               </div>
-              <h3>Praca dam magazyn G�teborg</h3>
+              <h3>Praca dam magazyn Göteborg</h3>
               <p class="price">145 SEK / godz.</p>
               <p>Praca od zaraz w polskim zespole, zmiana dzienna, pomoc we wdrozeniu.</p>
               <div class="listing-footer">
                 <span>Dzisiaj</span>
-                <a href="listing.html?id=demo-1">Szczeg�ly</a>
+                <a href="listing.html?id=demo-1">Szczegóły</a>
               </div>
             </div>
           </article>
@@ -246,71 +248,71 @@
             <div class="listing-content">
               <div class="listing-topline">
                 <span>Praca szukam</span>
-                <span>Kopenhaga � Dania</span>
+                <span>Kopenhaga - Dania</span>
               </div>
               <h3>Praca szukam sprzatanie Kopenhaga</h3>
               <p class="price">Pelen etat</p>
               <p>Szukam stabilnej pracy przy sprzataniu, komunikatywny polski i angielski.</p>
               <div class="listing-footer">
                 <span>2 godz. temu</span>
-                <a href="listing.html?id=demo-2">Szczeg�ly</a>
+                <a href="listing.html?id=demo-2">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Pok�j wynajme Sztokholm" data-category="pok�j wynajme" data-country="szwecja" data-city="Sztokholm">
+          <article class="listing-card" data-title="Pokój wynajmę Sztokholm" data-category="pokój wynajmę" data-country="szwecja" data-city="Sztokholm">
             <div class="listing-image gradient-three">
-              <span class="listing-badge">Pok�j wynajme</span>
+              <span class="listing-badge">Pokój wynajmę</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
-                <span>Pok�j wynajme</span>
-                <span>Sztokholm � Szwecja</span>
+                <span>Pokój wynajmę</span>
+                <span>Sztokholm - Szwecja</span>
               </div>
-              <h3>Pok�j wynajme Sztokholm</h3>
+              <h3>Pokój wynajmę Sztokholm</h3>
               <p class="price">5 200 SEK / mies.</p>
-              <p>Pok�j dla jednej osoby, dobra komunikacja, blisko polskiego sklepu.</p>
+              <p>Pokój dla jednej osoby, umeblowany, blisko metra i sklepu polskiego.</p>
               <div class="listing-footer">
                 <span>Wczoraj</span>
-                <a href="listing.html?id=demo-3">Szczeg�ly</a>
+                <a href="listing.html?id=demo-3">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Szukam pokoju Oslo" data-category="pok�j szukam" data-country="norwegia" data-city="Oslo">
+          <article class="listing-card" data-title="Szukam pokoju Oslo" data-category="pokój szukam" data-country="norwegia" data-city="Oslo">
             <div class="listing-image gradient-four">
-              <span class="listing-badge">Pok�j szukam</span>
+              <span class="listing-badge">Pokój szukam</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
-                <span>Pok�j szukam</span>
-                <span>Oslo � Norwegia</span>
+                <span>Pokój szukam</span>
+                <span>Oslo - Norwegia</span>
               </div>
               <h3>Szukam pokoju Oslo</h3>
               <p class="price">Do 6 000 NOK</p>
-              <p>Poszukuje pokoju blisko centrum, spokojna osoba pracujaca.</p>
+              <p>Poszukuję pokoju blisko centrum, spokojna osoba pracująca.</p>
               <div class="listing-footer">
                 <span>Dzisiaj</span>
-                <a href="listing.html?id=demo-4">Szczeg�ly</a>
+                <a href="listing.html?id=demo-4">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Mieszkanie wynajme Malm�" data-category="mieszkanie wynajme" data-country="szwecja" data-city="Malm�">
+          <article class="listing-card" data-title="Mieszkanie wynajmę Malmö" data-category="mieszkanie wynajmę" data-country="szwecja" data-city="Malmö">
             <div class="listing-image gradient-five">
-              <span class="listing-badge">Mieszkanie wynajme</span>
+              <span class="listing-badge">Mieszkania</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
-                <span>Mieszkanie wynajme</span>
-                <span>Malm� � Szwecja</span>
+                <span>Mieszkania</span>
+                <span>Malm? - Szwecja</span>
               </div>
-              <h3>Mieszkanie wynajme Malm�</h3>
+              <h3>Mieszkanie wynajmę Malmö</h3>
               <p class="price">9 800 SEK / mies.</p>
-              <p>Jasne mieszkanie w spokojnej okolicy, dobry dojazd do centrum i sklep�w.</p>
+              <p>Jasne mieszkanie w spokojnej okolicy, dobry dojazd do centrum i sklepów.</p>
               <div class="listing-footer">
                 <span>Nowe</span>
-                <a href="listing.html?id=demo-5">Szczeg�ly</a>
+                <a href="listing.html?id=demo-5">Szczegóły</a>
               </div>
             </div>
           </article>
@@ -322,109 +324,109 @@
             <div class="listing-content">
               <div class="listing-topline">
                 <span>Mieszkanie szukam</span>
-                <span>Aarhus � Dania</span>
+                <span>Aarhus - Dania</span>
               </div>
               <h3>Szukam mieszkania Aarhus</h3>
               <p class="price">Do 8 500 DKK</p>
               <p>Szukam malego mieszkania dla pary, najlepiej z mozliwoscia meldunku.</p>
               <div class="listing-footer">
                 <span>3 dni temu</span>
-                <a href="listing.html?id=demo-6">Szczeg�ly</a>
+                <a href="listing.html?id=demo-6">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Oferuje remonty i malowanie" data-category="uslugi oferuje" data-country="norwegia" data-city="Bergen">
+          <article class="listing-card" data-title="Oferuję remonty i malowanie" data-category="usługi oferuję" data-country="norwegia" data-city="Bergen">
             <div class="listing-image gradient-one">
-              <span class="listing-badge">Uslugi oferuje</span>
+              <span class="listing-badge">Usługi</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
-                <span>Uslugi oferuje</span>
-                <span>Bergen � Norwegia</span>
+                <span>Usługi</span>
+                <span>Bergen - Norwegia</span>
               </div>
               <h3>Oferuje remonty i malowanie</h3>
               <p class="price">Od 400 NOK</p>
               <p>Polska ekipa, szybkie terminy, mieszkania i male lokale uzytkowe.</p>
               <div class="listing-footer">
                 <span>Codziennie</span>
-                <a href="listing.html?id=demo-7">Szczeg�ly</a>
+                <a href="listing.html?id=demo-7">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Szukam ksiegowej dla firmy" data-category="uslugi szukam" data-country="dania" data-city="Kopenhaga">
+          <article class="listing-card" data-title="Szukam księgowej dla firmy" data-category="usługi szukam" data-country="dania" data-city="Kopenhaga">
             <div class="listing-image gradient-two">
-              <span class="listing-badge">Uslugi szukam</span>
+              <span class="listing-badge">Usługi szukam</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
-                <span>Uslugi szukam</span>
-                <span>Kopenhaga � Dania</span>
+                <span>Usługi szukam</span>
+                <span>Kopenhaga - Dania</span>
               </div>
               <h3>Szukam ksiegowej dla firmy</h3>
-              <p class="price">Stala wsp�lpraca</p>
+              <p class="price">Stała współpraca</p>
               <p>Potrzebna polskojezyczna ksiegowa do prowadzenia malej dzialalnosci w Danii.</p>
               <div class="listing-footer">
                 <span>W tym tygodniu</span>
-                <a href="listing.html?id=demo-8">Szczeg�ly</a>
+                <a href="listing.html?id=demo-8">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Sprzedam rower Malm�" data-category="sprzedam" data-country="szwecja" data-city="Malm�">
+          <article class="listing-card" data-title="Sprzedam rower Malmö" data-category="sprzedam" data-country="szwecja" data-city="Malmö">
             <div class="listing-image gradient-three">
               <span class="listing-badge">Sprzedam</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
                 <span>Sprzedam</span>
-                <span>Malm� � Szwecja</span>
+                <span>Malm? - Szwecja</span>
               </div>
-              <h3>Sprzedam rower Malm�</h3>
+              <h3>Sprzedam rower Malmö</h3>
               <p class="price">1 800 SEK</p>
-              <p>Rower miejski w dobrym stanie, idealny do dojazd�w do pracy.</p>
+              <p>Rower miejski w dobrym stanie, idealny do dojazdów do pracy.</p>
               <div class="listing-footer">
                 <span>Dzisiaj</span>
-                <a href="listing.html?id=demo-9">Szczeg�ly</a>
+                <a href="listing.html?id=demo-9">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Kupie uzywana pralke" data-category="kupie" data-country="dania" data-city="Odense">
+          <article class="listing-card" data-title="Kupię używaną pralkę" data-category="kupię" data-country="dania" data-city="Odense">
             <div class="listing-image gradient-four">
-              <span class="listing-badge">Kupie</span>
+              <span class="listing-badge">Kupię</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
-                <span>Kupie</span>
-                <span>Odense � Dania</span>
+                <span>Kupię</span>
+                <span>Odense - Dania</span>
               </div>
-              <h3>Kupie uzywana pralke</h3>
+              <h3>Kupię używaną pralkę</h3>
               <p class="price">Do 1 200 DKK</p>
               <p>Szukam sprawnej pralki, najlepiej z transportem lub blisko miasta.</p>
               <div class="listing-footer">
                 <span>Wczoraj</span>
-                <a href="listing.html?id=demo-10">Szczeg�ly</a>
+                <a href="listing.html?id=demo-10">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Ubranka dzieciece dla rodzic�w" data-category="inne" data-country="norwegia" data-city="Oslo">
+          <article class="listing-card" data-title="Ubranka dziecięce dla rodziców" data-category="inne" data-country="norwegia" data-city="Oslo">
             <div class="listing-image gradient-five">
               <span class="listing-badge">Inne</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
                 <span>Inne</span>
-                <span>Oslo � Norwegia</span>
+                <span>Oslo - Norwegia</span>
               </div>
-              <h3>Ubranka dzieciece dla rodzic�w</h3>
+              <h3>Ubranka dziecięce</h3>
               <p class="price">0 NOK</p>
-              <p>Paczka ubranek po dziecku, odbi�r osobisty w tygodniu.</p>
+              <p>Paczka ubranek po dziecku, odbiór osobisty w tygodniu.</p>
               <div class="listing-footer">
                 <span>Nowe</span>
-                <a href="listing.html?id=demo-11">Szczeg�ly</a>
+                <a href="listing.html?id=demo-11">Szczegóły</a>
               </div>
             </div>
           </article>
@@ -436,52 +438,52 @@
             <div class="listing-content">
               <div class="listing-topline">
                 <span>Sprzedam</span>
-                <span>Bergen � Norwegia</span>
+                <span>Bergen - Norwegia</span>
               </div>
               <h3>Auto na sprzedaz Bergen</h3>
               <p class="price">Wymiana</p>
-              <p>Auto osobowe do sprzedazy, sprawne i gotowe do dalszego uzytkowania przy pracy lub przewozie paczek.</p>
+              <p>Auto osobowe do sprzedaży, sprawne i gotowe do dalszego użytkowania przy pracy lub przewozie paczek.</p>
               <div class="listing-footer">
                 <span>3 dni temu</span>
-                <a href="listing.html?id=demo-12">Szczeg�ly</a>
+                <a href="listing.html?id=demo-12">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Transport paczek Polska Szwecja" data-category="transport" data-country="szwecja" data-city="Malm�">
+          <article class="listing-card" data-title="Transport paczek Polska Szwecja" data-category="transport" data-country="szwecja" data-city="Malm?">
             <div class="listing-image gradient-one">
               <span class="listing-badge">Transport</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
                 <span>Transport</span>
-                <span>Malm� � Szwecja</span>
+                <span>Malm? - Szwecja</span>
               </div>
               <h3>Transport paczek Polska Szwecja</h3>
               <p class="price">Od 180 SEK</p>
-              <p>Regularne kursy, przew�z paczek i rzeczy prywatnych od drzwi do drzwi.</p>
+              <p>Regularne kursy, przewóz paczek i rzeczy prywatnych od drzwi do drzwi.</p>
               <div class="listing-footer">
                 <span>Co tydzien</span>
-                <a href="listing.html?id=demo-13">Szczeg�ly</a>
+                <a href="listing.html?id=demo-13">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="Pomoc przy numerze personalnym" data-category="pomoc / formalnosci" data-country="szwecja" data-city="G�teborg">
+          <article class="listing-card" data-title="Pomoc przy numerze personalnym" data-category="pomoc / formalności" data-country="szwecja" data-city="Göteborg">
             <div class="listing-image gradient-two">
-              <span class="listing-badge">Pomoc / formalnosci</span>
+              <span class="listing-badge">Pomoc / formalności</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
-                <span>Pomoc / formalnosci</span>
-                <span>G�teborg � Szwecja</span>
+                <span>Pomoc / formalności</span>
+                <span>Göteborg - Szwecja</span>
               </div>
               <h3>Pomoc przy numerze personalnym</h3>
               <p class="price">Konsultacja</p>
-              <p>Wsparcie po polsku w dokumentach, urzedach i podstawowych formalnosciach.</p>
+              <p>Wsparcie po polsku w dokumentach, urzędach i podstawowych formalnościach.</p>
               <div class="listing-footer">
                 <span>Dzisiaj</span>
-                <a href="listing.html?id=demo-14">Szczeg�ly</a>
+                <a href="listing.html?id=demo-14">Szczegóły</a>
               </div>
             </div>
           </article>
@@ -493,54 +495,54 @@
             <div class="listing-content">
               <div class="listing-topline">
                 <span>Poznam ludzi</span>
-                <span>Oslo � Norwegia</span>
+                <span>Oslo - Norwegia</span>
               </div>
               <h3>Poznam ludzi w Oslo</h3>
               <p class="price">Spolecznosc</p>
-              <p>Szukam kontaktu z Polakami do rozm�w, spacer�w i wsp�lnego poznawania miasta.</p>
+              <p>Szukam kontaktu z Polakami do rozmów, spacerów i wspólnego poznawania miasta.</p>
               <div class="listing-footer">
                 <span>Wczoraj</span>
-                <a href="listing.html?id=demo-15">Szczeg�ly</a>
+                <a href="listing.html?id=demo-15">Szczegóły</a>
               </div>
             </div>
           </article>
 
-          <article class="listing-card" data-title="R�zne ogloszenie lokalne" data-category="inne" data-country="dania" data-city="Aarhus">
+          <article class="listing-card" data-title="Różne ogłoszenie lokalne" data-category="inne" data-country="dania" data-city="Aarhus">
             <div class="listing-image gradient-four">
               <span class="listing-badge">Inne</span>
             </div>
             <div class="listing-content">
               <div class="listing-topline">
                 <span>Inne</span>
-                <span>Aarhus � Dania</span>
+                <span>Aarhus - Dania</span>
               </div>
-              <h3>R�zne ogloszenie lokalne</h3>
+              <h3>Różne ogłoszenia lokalne</h3>
               <p class="price">Do ustalenia</p>
-              <p>Ogloszenie lokalne dla Polonii, kt�re nie pasuje do innych kategorii portalu.</p>
+              <p>Ogłoszenia, które nie pasują do innych kategorii.</p>
               <div class="listing-footer">
                 <span>W tym tygodniu</span>
-                <a href="listing.html?id=demo-16">Szczeg�ly</a>
+                <a href="listing.html?id=demo-16">Szczegóły</a>
               </div>
             </div>
           </article>
         </div>
 
-        <p class="listing-empty hidden" id="listingEmpty">Brak ogloszen pasujacych do wyszukiwania, typu ogloszenia, kraju lub miasta.</p>
+        <p class="listing-empty hidden" id="listingEmpty">Brak ogłoszeń pasujących do wyszukiwania, typu ogłoszenia, kraju lub miasta.</p>
       </section>
 
       <section class="categories" id="seo-text">
         <div class="section-heading">
           <div>
             <span>Polonia w Skandynawii</span>
-            <h2>Ogloszenia dla Polak�w w Szwecji, Norwegii i Danii</h2>
+            <h2>Ogłoszenia dla Polaków w Skandynawii</h2>
           </div>
-          <p>Praktyczna baza ogloszen dla os�b, kt�re chca szybciej znalezc prace, mieszkanie, uslugi i sprawdzone kontakty po polsku.</p>
+          <p>Praktyczna baza ogłoszeń dla osób, które chcą szybciej znaleźć pracę, mieszkanie, usługi i sprawdzone kontakty po polsku.</p>
         </div>
 
         <div class="seo-copy-text">
-          <p>TwojBazar to miejsce, w kt�rym znajdziesz ogloszenia dla Polak�w w Szwecji, Norwegii i Danii zwiazane z codziennym zyciem za granica. Serwis skupia ogloszenia dla Polonii w Skandynawii, w tym oferty typu praca dam i praca szukam, dzieki czemu latwiej dotrzec do zatrudnienia, lokalnych kontakt�w oraz sprawdzonych informacji po polsku.</p>
-          <p>Na stronie publikowane sa takze ogloszenia dotyczace mieszkan i pokoi, takie jak mieszkanie wynajme, mieszkanie szukam, pok�j wynajme oraz pok�j szukam. To ulatwia Polakom w Skandynawii znalezienie lokum w takich miastach jak Sztokholm, G�teborg, Malm�, Oslo czy Kopenhaga i pozwala szybciej znalezc oferty dopasowane do kraju i miasta.</p>
-          <p>TwojBazar pomaga r�wniez znalezc uslugi i transport dla Polak�w w Szwecji, Norwegii i Danii. W jednym miejscu mozna sprawdzic ogloszenia zwiazane z przewozami, paczkami, przeprowadzkami, fachowcami, pomoca w formalnosciach i codziennym wsparciem, co wzmacnia kontakty wsr�d Polonii w Skandynawii.</p>
+          <p>TwojBazar to miejsce, w którym znajdziesz ogłoszenia dla Polaków w Szwecji, Norwegii i Danii związane z codziennym życiem za granicą. Serwis skupia ogłoszenia dla Polonii w Skandynawii, w tym oferty typu praca dam i praca szukam, dzięki czemu łatwiej dotrzeć do zatrudnienia, lokalnych kontaktów oraz sprawdzonych informacji po polsku.</p>
+          <p>Na stronie publikowane są także ogłoszenia dotyczące mieszkań i pokoi, takie jak mieszkanie wynajmę, mieszkanie szukam, pokój wynajmę oraz pokój szukam. To ułatwia Polakom w Skandynawii znalezienie lokum w takich miastach jak Sztokholm, Göteborg, Malmö, Oslo czy Kopenhaga i pozwala szybciej znaleźć oferty dopasowane do kraju i miasta.</p>
+          <p>TwojBazar pomaga również znaleźć usługi i transport dla Polaków w Szwecji, Norwegii i Danii. W jednym miejscu można sprawdzić ogłoszenia związane z przewozami, paczkami, przeprowadzkami, fachowcami, pomocą w formalnościach i codziennym wsparciem, co wzmacnia kontakty wśród Polonii w Skandynawii.</p>
         </div>
       </section>
     </main>

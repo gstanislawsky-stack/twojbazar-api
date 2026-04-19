@@ -2,7 +2,7 @@
 
 Flutter Android app using WebView for:
 
-`https://twojbazar.com/app/index.html#home`
+`https://twojbazar.com/#start`
 
 ## Package
 

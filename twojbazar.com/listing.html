@@ -1,8 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f766e">
   <meta name="description" content="Szczegóły ogłoszenia w TwojBazar. Sprawdź ofertę dla Polaków w Szwecji, Norwegii lub Danii.">
   <title>Szczegóły ogłoszenia | TwojBazar</title>
   <link rel="stylesheet" href="style.css">
@@ -15,25 +18,21 @@
         <span class="logo-text">TwojBazar</span>
       </a>
 
-      <button
-        class="menu-toggle"
-        type="button"
-        aria-label="Otwórz menu"
-        aria-expanded="false"
-        aria-controls="site-navigation"
-      >
+      <button class="menu-toggle" type="button" aria-label="Otwórz menu" aria-expanded="false" aria-controls="site-navigation">
         <span></span>
         <span></span>
         <span></span>
       </button>
+      <div class="nav-center">
 
       <nav class="nav-links" id="site-navigation">
         <a href="index.html#start">Start</a>
         <a href="index.html#kategorie">Kategorie</a>
-        <a href="pomoc.html">Pomoc</a>
+        <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
         <a href="index.html#kontakt">Kontakt</a>
       </nav>
-
+      </div>
+        <a href="index.html#ogloszenia" class="nav-link-secondary">Przeglądaj</a>
       <div class="navbar-cta">
         <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
       </div>
@@ -52,7 +51,7 @@
 
           <div class="listing-gallery" id="listingGallery">
             <div class="listing-details-image" id="listingImageWrap">
-              <img id="listingImage" alt="Zdjęcie ogłoszenia" class="hidden">
+              <img id="listingImage" alt="Zdjęcie ogłoszenia">
               <div class="listing-image-placeholder" id="listingImagePlaceholder">
                 <span>Brak zdjęcia</span>
               </div>

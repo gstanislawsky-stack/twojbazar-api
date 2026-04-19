@@ -41,6 +41,7 @@ const imagePreviewThumb = document.getElementById("manageImagePreviewThumb");
 const removeImageButton = document.getElementById("manageRemoveImageButton");
 const toggleStatusButton = document.getElementById("toggleStatusButton");
 const deleteListingButton = document.getElementById("deleteListingButton");
+const publicLinkText = document.getElementById("publicLinkText");
 const manageLinkText = document.getElementById("manageLinkText");
 const copyManageLinkButton = document.getElementById("copyManageLinkButton");
 const viewListingButton = document.getElementById("viewListingButton");
@@ -172,13 +173,22 @@ function getManagementPath(token) {
 }
 
 function updateViewActions(listing) {
-  const managementUrl = `${window.location.origin}${window.location.pathname}?token=${encodeURIComponent(manageToken)}`;
+  const managementUrl = listing.manageUrl || listing.managementUrl || `${window.location.origin}/manage.html?token=${encodeURIComponent(manageToken)}`;
+  const publicUrl = listing.publicUrl || `${window.location.origin}/listing.html?id=${encodeURIComponent(listing.id)}`;
+
+  if (publicLinkText) {
+    publicLinkText.textContent = publicUrl;
+  }
+
   manageLinkText.textContent = managementUrl;
-  viewListingButton.href = `listing.html?id=${encodeURIComponent(listing.id)}`;
-  toggleStatusButton.textContent = listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne";
-  intro.textContent = listing.status === "inactive"
-    ? "To ogłoszenie jest oznaczone jako nieaktualne. Możesz je ponownie aktywować albo edytować."
-    : "Przez ten prywatny link możesz edytować, usunąć albo oznaczyć ogłoszenie jako nieaktualne.";
+  viewListingButton.href = publicUrl;
+  viewListingButton.classList.toggle("hidden", listing.status !== "active");
+  toggleStatusButton.textContent = listing.status === "deleted" ? "Przywróć ogłoszenie" : listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne";
+  intro.textContent = listing.status === "deleted"
+    ? "To ogłoszenie jest usunięte publicznie. Nadal możesz je przywrócić albo edytować przez ten prywatny link."
+    : listing.status === "inactive"
+      ? "To ogłoszenie jest oznaczone jako nieaktualne. Możesz je ponownie aktywować albo edytować."
+      : "Przez ten prywatny link możesz edytować, usunąć albo oznaczyć ogłoszenie jako nieaktualne.";
 }
 
 function populateForm(listing) {
@@ -272,9 +282,11 @@ async function updateListingStatus(status) {
 }
 
 async function deleteListing() {
-  await fetchWithFallback(getManagementPath(manageToken), {
+  const response = await fetchWithFallback(getManagementPath(manageToken), {
     method: "DELETE",
   });
+
+  return response.json();
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -343,10 +355,10 @@ toggleStatusButton?.addEventListener("click", async () => {
   }
 
   try {
-    const nextStatus = currentListing.status === "inactive" ? "active" : "inactive";
+    const nextStatus = currentListing.status === "deleted" ? "active" : currentListing.status === "inactive" ? "active" : "inactive";
     const listing = await updateListingStatus(nextStatus);
     populateForm(listing);
-    setStatus(nextStatus === "inactive" ? "Ogłoszenie oznaczono jako nieaktualne." : "Ogłoszenie ponownie oznaczono jako aktualne.", "success");
+    setStatus(nextStatus === "inactive" ? "Ogłoszenie oznaczono jako nieaktualne." : "Ogłoszenie ponownie oznaczono jako aktywne.", "success");
   } catch (error) {
     console.error("Manage listing status error:", error);
     setStatus(error.message || "Nie udało się zmienić statusu.", "error");
@@ -359,16 +371,16 @@ deleteListingButton?.addEventListener("click", async () => {
   }
 
   try {
-    await deleteListing();
-    setStatus("Ogłoszenie zostało usunięte.", "success");
-    window.setTimeout(() => {
-      window.location.href = "index.html";
-    }, 500);
+    const listing = await deleteListing();
+    populateForm(listing);
+    setStatus("Ogłoszenie zostało usunięte i ukryte publicznie.", "success");
   } catch (error) {
     console.error("Manage listing delete error:", error);
     setStatus(error.message || "Nie udało się usunąć ogłoszenia.", "error");
   }
 });
+
+
 
 
 

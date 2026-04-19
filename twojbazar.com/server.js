@@ -21,16 +21,16 @@ let listingsWriteQueue = Promise.resolve();
 const ALLOWED_CATEGORIES = [
   "Praca dam",
   "Praca szukam",
-  "Mieszkanie wynajme",
+  "Mieszkanie wynajmę",
   "Mieszkanie szukam",
-  "Pokój wynajme",
+  "Pokój wynajmę",
   "Pokój szukam",
-  "Uslugi oferuje",
-  "Uslugi szukam",
+  "Usługi oferuję",
+  "Usługi szukam",
   "Sprzedam",
-  "Kupie",
+  "Kupię",
   "Transport",
-  "Pomoc / formalnosci",
+  "Pomoc / formalności",
   "Poznam ludzi",
   "Inne",
 ];
@@ -47,9 +47,11 @@ if (!process.env.OPENAI_API_KEY) {
   console.warn("Missing OPENAI_API_KEY. The AI endpoint will return an error until it is configured.");
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  : null;
 
 const uploadLimits = {
   fileSize: 10 * 1024 * 1024,
@@ -139,7 +141,7 @@ function normalizeCategory(value) {
   }
 
   if (normalizedValue.includes("mieszkan")) {
-    return "Mieszkanie wynajme";
+    return "Mieszkanie wynajmę";
   }
 
   if ((normalizedValue.includes("pokoj") || normalizedValue.includes("pok")) && normalizedValue.includes("szuk")) {
@@ -147,15 +149,15 @@ function normalizeCategory(value) {
   }
 
   if (normalizedValue.includes("pokoj") || normalizedValue.includes("pok")) {
-    return "Pokój wynajme";
+    return "Pokój wynajmę";
   }
 
   if (normalizedValue.includes("uslug") && normalizedValue.includes("szuk")) {
-    return "Uslugi szukam";
+    return "Usługi szukam";
   }
 
   if (normalizedValue.includes("uslug") || normalizedValue.includes("remont") || normalizedValue.includes("ksieg") || normalizedValue.includes("tlumacz")) {
-    return "Uslugi oferuje";
+    return "Usługi oferuję";
   }
 
   if (normalizedValue.includes("sprzed")) {
@@ -163,7 +165,7 @@ function normalizeCategory(value) {
   }
 
   if (normalizedValue.includes("kupi") || normalizedValue.includes("szukam kup")) {
-    return "Kupie";
+    return "Kupię";
   }
 
   if (normalizedValue.includes("transport") || normalizedValue.includes("przewoz") || normalizedValue.includes("bus")) {
@@ -171,7 +173,7 @@ function normalizeCategory(value) {
   }
 
   if (normalizedValue.includes("formal") || normalizedValue.includes("pomoc")) {
-    return "Pomoc / formalnosci";
+    return "Pomoc / formalności";
   }
 
   if (normalizedValue.includes("poznam") || normalizedValue.includes("ludzi") || normalizedValue.includes("spolecz")) {
@@ -232,7 +234,17 @@ function sanitizeImageValue(value) {
 }
 
 function normalizeStatus(value) {
-  return normalizeString(value) === "inactive" ? "inactive" : "active";
+  const normalizedValue = normalizeString(value);
+
+  if (normalizedValue === "deleted") {
+    return "deleted";
+  }
+
+  if (normalizedValue === "inactive") {
+    return "inactive";
+  }
+
+  return "active";
 }
 
 function normalizeListing(listing) {
@@ -295,13 +307,20 @@ function getBaseUrl(req) {
 }
 
 function getManagementUrl(req, token) {
-  return `${getBaseUrl(req)}/manage-listing.html?token=${encodeURIComponent(token)}`;
+  return `${getBaseUrl(req)}/manage.html?token=${encodeURIComponent(token)}`;
+}
+
+function getPublicListingUrl(req, listingId) {
+  return `${getBaseUrl(req)}/listing.html?id=${encodeURIComponent(listingId)}`;
 }
 
 function serializeManagedListing(req, listing) {
   return {
     ...serializePublicListing(req, listing),
+    publicUrl: getPublicListingUrl(req, listing.id),
+    manageUrl: getManagementUrl(req, listing.managementToken),
     managementUrl: getManagementUrl(req, listing.managementToken),
+    managementToken: listing.managementToken,
   };
 }
 
@@ -314,7 +333,7 @@ function validateListingPayload(payload, options = {}) {
   const errors = [];
 
   if (!normalizedListing.title) {
-    errors.push("Tytul jest wymagany.");
+    errors.push("Tytuł jest wymagany.");
   }
 
   if (!normalizedListing.category) {
@@ -326,7 +345,7 @@ function validateListingPayload(payload, options = {}) {
   }
 
   if (!normalizedListing.country || !ALLOWED_COUNTRIES.includes(normalizedListing.country)) {
-    errors.push("Kraj musi miec wartosc: Szwecja, Norwegia albo Dania.");
+    errors.push("Kraj musi mieć wartość: Szwecja, Norwegia albo Dania.");
   }
 
   if (!normalizedListing.city) {
@@ -338,7 +357,7 @@ function validateListingPayload(payload, options = {}) {
   }
 
   if (!normalizedListing.contactName) {
-    errors.push("Imie kontaktowe jest wymagane.");
+    errors.push("Imię kontaktowe jest wymagane.");
   }
 
   if (!normalizedListing.phone && !normalizedListing.email) {
@@ -434,6 +453,16 @@ async function saveListings() {
 
 await loadListings();
 
+app.use((_req, res, next) => {
+  res.charset = "utf-8";
+  next();
+});
+
+app.use((req, res, next) => {
+  res.charset = "utf-8";
+  next();
+});
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
@@ -454,10 +483,25 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: "12mb" }));
 app.use("/uploads", express.static(uploadsDirPath));
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, {
+  setHeaders: (res, filePath) => {
+    const extension = path.extname(filePath).toLowerCase();
+    const textContentTypes = {
+      ".html": "text/html",
+      ".css": "text/css",
+      ".js": "application/javascript",
+      ".json": "application/json",
+      ".txt": "text/plain",
+    };
+
+    if (textContentTypes[extension]) {
+      res.setHeader("Content-Type", `${textContentTypes[extension]}; charset=utf-8`);
+    }
+  },
+}));
 
 app.get("/", (_req, res) => {
-  res.type("text/plain").send("API dziala");
+  res.type("text/plain").send("API działa");
 });
 
 app.get("/api/listings", (_req, res) => {
@@ -471,9 +515,9 @@ app.get("/api/listings", (_req, res) => {
 app.get("/api/listings/:id", (req, res) => {
   const listing = listings.find((item) => String(item.id) === String(req.params.id));
 
-  if (!listing) {
+  if (!listing || normalizeStatus(listing.status) !== "active") {
     return res.status(404).json({
-      error: "Nie znaleziono ogloszenia.",
+      error: "Nie znaleziono ogłoszenia.",
     });
   }
 
@@ -530,7 +574,7 @@ app.post("/api/listings", listingUpload, async (req, res) => {
     });
 
     return res.status(500).json({
-      error: "Nie udalo sie zapisac ogloszenia.",
+      error: "Nie udało się zapisać ogłoszenia.",
     });
   }
 });
@@ -541,7 +585,7 @@ app.get("/api/manage/:token", (req, res) => {
 
   if (!listing) {
     return res.status(404).json({
-      error: "Nie znaleziono ogloszenia do zarzadzania.",
+      error: "Nie znaleziono ogłoszenia do zarządzania.",
     });
   }
 
@@ -555,7 +599,7 @@ app.put("/api/manage/:token", async (req, res) => {
 
     if (listingIndex === -1) {
       return res.status(404).json({
-        error: "Nie znaleziono ogloszenia do edycji.",
+        error: "Nie znaleziono ogłoszenia do edycji.",
       });
     }
 
@@ -576,7 +620,6 @@ app.put("/api/manage/:token", async (req, res) => {
       ...normalizedPayload,
       id: existingListing.id,
       createdAt: existingListing.createdAt,
-      dateAdded: existingListing.createdAt,
       managementToken: existingListing.managementToken,
       status: existingListing.status,
     };
@@ -592,7 +635,7 @@ app.put("/api/manage/:token", async (req, res) => {
     });
 
     return res.status(500).json({
-      error: "Nie udalo sie zaktualizowac ogloszenia.",
+      error: "Nie udało się zaktualizować ogłoszenia.",
     });
   }
 });
@@ -604,7 +647,7 @@ app.patch("/api/manage/:token/status", async (req, res) => {
 
     if (listingIndex === -1) {
       return res.status(404).json({
-        error: "Nie znaleziono ogloszenia do zmiany statusu.",
+        error: "Nie znaleziono ogłoszenia do zmiany statusu.",
       });
     }
 
@@ -624,7 +667,7 @@ app.patch("/api/manage/:token/status", async (req, res) => {
     });
 
     return res.status(500).json({
-      error: "Nie udalo sie zmienic statusu ogloszenia.",
+      error: "Nie udało się zmienić statusu ogłoszenia.",
     });
   }
 });
@@ -636,14 +679,17 @@ app.delete("/api/manage/:token", async (req, res) => {
 
     if (listingIndex === -1) {
       return res.status(404).json({
-        error: "Nie znaleziono ogloszenia do usuniecia.",
+        error: "Nie znaleziono ogłoszenia do usunięcia.",
       });
     }
 
-    listings.splice(listingIndex, 1);
+    listings[listingIndex] = {
+      ...listings[listingIndex],
+      status: "deleted",
+    };
     await saveListings();
 
-    return res.status(204).send();
+    return res.json(serializeManagedListing(req, listings[listingIndex]));
   } catch (error) {
     console.error("[Listings] Failed to delete listing", {
       message: error?.message,
@@ -651,14 +697,14 @@ app.delete("/api/manage/:token", async (req, res) => {
     });
 
     return res.status(500).json({
-      error: "Nie udalo sie usunac ogloszenia.",
+      error: "Nie udało się usunąć ogłoszenia.",
     });
   }
 });
 
 async function handleGenerateDescription(req, res) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!openai) {
       console.error("[AI] Missing OPENAI_API_KEY");
 
       return res.status(500).json({
@@ -698,7 +744,7 @@ async function handleGenerateDescription(req, res) {
     const response = await openai.responses.create({
       model,
       instructions:
-        "Generate realistic marketplace listings in natural, user-friendly Polish. The output must sound like a real classified ad written by a person, not like marketing copy. Keep the description practical, clear and easy to scan. The description must be 3 to 5 sentences long. Do not invent brands, technical specifications, dimensions, defects, accessories, locations, prices or condition details unless they are clearly visible in the image. If something is uncertain, keep the wording general and cautious. Use marketplace-friendly language suitable for classifieds. The category must be exactly one of: Praca dam, Praca szukam, Mieszkanie wynajme, Mieszkanie szukam, Pokój wynajme, Pokój szukam, Uslugi oferuje, Uslugi szukam, Sprzedam, Kupie, Transport, Pomoc / formalnosci, Poznam ludzi, Inne. If no category clearly fits, use Inne.",
+        "Generate realistic marketplace listings in natural, user-friendly Polish. The output must sound like a real classified ad written by a person, not like marketing copy. Keep the description practical, clear and easy to scan. The description must be 3 to 5 sentences long. Do not invent brands, technical specifications, dimensions, defects, accessories, locations, prices or condition details unless they are clearly visible in the image. If something is uncertain, keep the wording general and cautious. Use marketplace-friendly language suitable for classifieds. The category must be exactly one of: Praca dam, Praca szukam, Mieszkanie wynajmę, Mieszkanie szukam, Pokój wynajmę, Pokój szukam, Usługi oferuję, Usługi szukam, Sprzedam, Kupię, Transport, Pomoc / formalności, Poznam ludzi, Inne. If no category clearly fits, use Inne.",
       input: [
         {
           role: "user",
@@ -706,7 +752,7 @@ async function handleGenerateDescription(req, res) {
             {
               type: "input_text",
               text:
-                "Przeanalizuj zdjecie i wygeneruj dane ogloszenia po polsku. Tytul ma byc krótki, naturalny i wiarygodny. Kategoria ma byc wybrana dokladnie z tej listy: Praca dam, Praca szukam, Mieszkanie wynajme, Mieszkanie szukam, Pokój wynajme, Pokój szukam, Uslugi oferuje, Uslugi szukam, Sprzedam, Kupie, Transport, Pomoc / formalnosci, Poznam ludzi, Inne. Nie twórz nowych kategorii i nie zmieniaj nazw. Jesli nic nie pasuje, ustaw Inne. Opis ma miec od 3 do 5 zdan, brzmiec naturalnie i nadawac sie do portalu ogloszeniowego. Pisz jasno, konkretnie i przyjaznie dla uzytkownika. Nie dopisuj informacji, których nie da sie rozsadnie wywnioskowac ze zdjecia. Lista features powinna zawierac krótkie, praktyczne cechy widoczne na zdjeciu lub bardzo ostrozne obserwacje. Zwróc wylacznie dane zgodne z wymaganym schematem JSON.",
+                "Przeanalizuj zdjęcie i wygeneruj dane ogłoszenia po polsku. Tytuł ma być krótki, naturalny i wiarygodny. Kategoria ma być wybrana dokładnie z tej listy: Praca dam, Praca szukam, Mieszkanie wynajmę, Mieszkanie szukam, Pokój wynajmę, Pokój szukam, Usługi oferuję, Usługi szukam, Sprzedam, Kupię, Transport, Pomoc / formalności, Poznam ludzi, Inne. Nie twórz nowych kategorii i nie zmieniaj nazw. Jeśli nic nie pasuje, ustaw Inne. Opis ma mieć od 3 do 5 zdań, brzmieć naturalnie i nadawać się do portalu ogłoszeniowego. Pisz jasno, konkretnie i przyjaźnie dla użytkownika. Nie dopisuj informacji, których nie da się rozsądnie wywnioskować ze zdjęcia. Lista features powinna zawierać krótkie, praktyczne cechy widoczne na zdjęciu lub bardzo ostrożne obserwacje. Zwróć wyłącznie dane zgodne z wymaganym schematem JSON.",
             },
             {
               type: "input_image",
@@ -778,7 +824,7 @@ async function handleGenerateDescription(req, res) {
 
 async function handleModerateListing(req, res) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    if (!openai) {
       console.error("[Moderation] Missing OPENAI_API_KEY");
 
       return res.status(500).json({
@@ -805,7 +851,7 @@ async function handleModerateListing(req, res) {
           content: [
             {
               type: "input_text",
-              text: `Tytul: ${title}\nOpis: ${description}`,
+              text: `Tytuł: ${title}\nOpis: ${description}`,
             },
           ],
         },
@@ -879,7 +925,7 @@ app.use((error, _req, res, _next) => {
     });
 
     return res.status(400).json({
-      error: "Nie udalo sie przetworzyc przeslanego pliku.",
+      error: "Nie udało się przetworzyć przesłanego pliku.",
       details: [error.message],
     });
   }
@@ -894,9 +940,13 @@ app.use((error, _req, res, _next) => {
     });
   }
 
-  if (error?.type === "entity.parse.failed") {
+  if (error instanceof SyntaxError && "body" in (error || {})) {
+    console.error("[Request] Invalid JSON payload", {
+      message: error.message,
+    });
+
     return res.status(400).json({
-      error: "Nieprawidlowy format danych JSON.",
+      error: "Nieprawidłowy format danych JSON.",
     });
   }
 
@@ -906,7 +956,7 @@ app.use((error, _req, res, _next) => {
   });
 
   return res.status(500).json({
-    error: "Wystapil nieoczekiwany blad serwera.",
+    error: "Wystąpił nieoczekiwany błąd serwera.",
   });
 });
 

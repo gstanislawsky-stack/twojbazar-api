@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -7,37 +8,95 @@ void main() {
   runApp(const TwojBazarApp());
 }
 
+const String _appHost = 'twojbazar.com';
+const String _wwwAppHost = 'www.twojbazar.com';
+const String _initialUrl = 'https://twojbazar.com/#start';
+const Color _brandNavy = Color(0xFF101827);
+const Color _brandNavySoft = Color(0xFF132033);
+const Color _brandOrange = Color(0xFFFF7A1A);
+const Color _brandTeal = Color(0xFF21C7B7);
+const Color _appCanvas = Color(0xFFFFF7ED);
+const Map<_QuickDestination, String> _quickRoutes = {
+  _QuickDestination.home: 'https://twojbazar.com/#start',
+  _QuickDestination.add: 'https://twojbazar.com/add-listing.html',
+  _QuickDestination.addAi:
+      'https://twojbazar.com/add-listing.html?mode=ai#ai-quick-start',
+};
+
+enum _QuickDestination {
+  home,
+  add,
+  addAi,
+}
+
 class TwojBazarApp extends StatelessWidget {
   const TwojBazarApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Twoj Bazar',
+      title: 'TwojBazar',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0F766E),
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF4F1EA),
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          centerTitle: true,
-          backgroundColor: Colors.white,
-          foregroundColor: Color(0xFF162125),
-          surfaceTintColor: Colors.transparent,
-          titleTextStyle: TextStyle(
-            color: Color(0xFF162125),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        useMaterial3: true,
-      ),
+      theme: _buildAppTheme(Brightness.light),
+      darkTheme: _buildAppTheme(Brightness.dark),
+      themeMode: ThemeMode.system,
       home: const TwojBazarWebViewPage(),
     );
   }
+}
+
+ThemeData _buildAppTheme(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+  final shellColor = isDark ? _brandNavy : _appCanvas;
+  final appBarColor = isDark ? _brandNavySoft : const Color(0xFFFFF3DF);
+  final foregroundColor = isDark ? Colors.white : const Color(0xFF172026);
+
+  return ThemeData(
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: _brandTeal,
+      brightness: brightness,
+    ).copyWith(
+      primary: _brandTeal,
+      secondary: _brandOrange,
+      surface: isDark ? _brandNavySoft : Colors.white,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: foregroundColor,
+    ),
+    scaffoldBackgroundColor: shellColor,
+    appBarTheme: AppBarTheme(
+      elevation: 0,
+      centerTitle: true,
+      backgroundColor: appBarColor,
+      foregroundColor: foregroundColor,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: TextStyle(
+        color: foregroundColor,
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+      ),
+      iconTheme: IconThemeData(color: foregroundColor),
+      actionsIconTheme: IconThemeData(color: foregroundColor),
+    ),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: _brandOrange,
+      linearTrackColor: Color(0x3321C7B7),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: _brandOrange,
+        foregroundColor: Colors.white,
+        textStyle: const TextStyle(fontWeight: FontWeight.w800),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(foregroundColor: foregroundColor),
+    ),
+    useMaterial3: true,
+  );
 }
 
 class TwojBazarWebViewPage extends StatefulWidget {
@@ -48,12 +107,13 @@ class TwojBazarWebViewPage extends StatefulWidget {
 }
 
 class _TwojBazarWebViewPageState extends State<TwojBazarWebViewPage> {
-  static const String _initialUrl = 'https://twojbazar.com/app/index.html#home';
-
   late final WebViewController _controller;
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
+  String _currentUrl = _initialUrl;
+  bool _canGoBack = false;
+  bool _canGoForward = false;
 
   @override
   void initState() {
@@ -61,7 +121,7 @@ class _TwojBazarWebViewPageState extends State<TwojBazarWebViewPage> {
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFFF4F1EA))
+      ..setBackgroundColor(_appCanvas)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) {
@@ -75,6 +135,7 @@ class _TwojBazarWebViewPageState extends State<TwojBazarWebViewPage> {
             });
           },
           onPageFinished: (_) {
+            _syncNavigationState();
             if (!mounted) {
               return;
             }
@@ -99,17 +160,12 @@ class _TwojBazarWebViewPageState extends State<TwojBazarWebViewPage> {
               return NavigationDecision.prevent;
             }
 
-            final scheme = uri.scheme.toLowerCase();
-            const embeddedSchemes = {
-              'http',
-              'https',
-              'file',
-              'about',
-              'data',
-              'javascript',
-            };
+            _currentUrl = request.url;
 
-            if (embeddedSchemes.contains(scheme)) {
+            final scheme = uri.scheme.toLowerCase();
+            final host = uri.host.toLowerCase();
+
+            if (_shouldStayInWebView(scheme, host)) {
               return NavigationDecision.navigate;
             }
 
@@ -124,9 +180,45 @@ class _TwojBazarWebViewPageState extends State<TwojBazarWebViewPage> {
       ..loadRequest(Uri.parse(_initialUrl));
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    _controller.setBackgroundColor(isDark ? _brandNavy : _appCanvas);
+  }
+
+  bool _shouldStayInWebView(String scheme, String host) {
+    if (const {'file', 'about', 'data', 'javascript'}.contains(scheme)) {
+      return true;
+    }
+
+    if (scheme == 'http' || scheme == 'https') {
+      return host == _appHost || host == _wwwAppHost || host.isEmpty;
+    }
+
+    return false;
+  }
+
+  Future<void> _syncNavigationState() async {
+    final canGoBack = await _controller.canGoBack();
+    final canGoForward = await _controller.canGoForward();
+    final currentUrl = await _controller.currentUrl() ?? _currentUrl;
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _canGoBack = canGoBack;
+      _canGoForward = canGoForward;
+      _currentUrl = currentUrl;
+    });
+  }
+
   Future<bool> _handleBackPressed() async {
     if (await _controller.canGoBack()) {
       await _controller.goBack();
+      await _syncNavigationState();
       return false;
     }
     return true;
@@ -141,14 +233,87 @@ class _TwojBazarWebViewPageState extends State<TwojBazarWebViewPage> {
     await _controller.reload();
   }
 
+  Future<void> _openQuickDestination(_QuickDestination destination) async {
+    final url = _quickRoutes[destination];
+    if (url == null) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+      _errorMessage = '';
+    });
+
+    await _controller.loadRequest(Uri.parse(url));
+  }
+
+  String get _appBarTitle {
+    if (_currentUrl.contains('add-listing.html') &&
+        _currentUrl.contains('mode=ai')) {
+      return 'Dodaj z AI';
+    }
+    if (_currentUrl.contains('add-listing.html')) {
+      return 'Dodaj ogłoszenie';
+    }
+    if (_currentUrl.contains('#manage/')) {
+      return 'Zarządzanie';
+    }
+    if (_currentUrl.contains('#listing/')) {
+      return 'Szczegóły';
+    }
+
+    return 'TwojBazar';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _handleBackPressed,
-      child: Scaffold(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final systemOverlayStyle = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: isDark ? _brandNavy : _appCanvas,
+      systemNavigationBarIconBrightness:
+          isDark ? Brightness.light : Brightness.dark,
+    );
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: systemOverlayStyle,
+      child: PopScope(
+        canPop: !_canGoBack,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) {
+            return;
+          }
+
+          _handleBackPressed();
+        },
+        child: Scaffold(
         appBar: AppBar(
-          title: const Text('Twoj Bazar'),
+          title: Text(_appBarTitle),
           actions: [
+            IconButton(
+              tooltip: 'Strona główna',
+              onPressed: () => _openQuickDestination(_QuickDestination.home),
+              icon: const Icon(Icons.home_rounded),
+            ),
+            IconButton(
+              tooltip: 'Dodaj ogłoszenie',
+              onPressed: () => _openQuickDestination(_QuickDestination.add),
+              icon: const Icon(Icons.add_box_rounded),
+            ),
+            PopupMenuButton<_QuickDestination>(
+              tooltip: 'Skróty',
+              onSelected: _openQuickDestination,
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _QuickDestination.addAi,
+                  child: Text('Dodaj szybciej z AI'),
+                ),
+              ],
+              icon: const Icon(Icons.auto_awesome_rounded),
+            ),
             IconButton(
               tooltip: 'Odśwież',
               onPressed: _reload,
@@ -177,9 +342,57 @@ class _TwojBazarWebViewPageState extends State<TwojBazarWebViewPage> {
                   right: 0,
                   child: LinearProgressIndicator(minHeight: 3),
                 ),
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0xF0132033),
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 24,
+                        offset: Offset(0, 10),
+                      ),
+                      BoxShadow(
+                        color: Color(0x22FF7A1A),
+                        blurRadius: 18,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Wstecz',
+                        onPressed: _canGoBack
+                            ? () async {
+                                await _controller.goBack();
+                                await _syncNavigationState();
+                              }
+                            : null,
+                        icon: const Icon(Icons.arrow_back_rounded),
+                      ),
+                      IconButton(
+                        tooltip: 'Dalej',
+                        onPressed: _canGoForward
+                            ? () async {
+                                await _controller.goForward();
+                                await _syncNavigationState();
+                              }
+                            : null,
+                        icon: const Icon(Icons.arrow_forward_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -203,9 +416,10 @@ class _ErrorState extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 360),
           child: Card(
             elevation: 0,
+            color: const Color(0xFFFFF7ED),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
-              side: const BorderSide(color: Color(0x14000000)),
+              side: const BorderSide(color: Color(0x1A0F766E)),
             ),
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -215,7 +429,7 @@ class _ErrorState extends StatelessWidget {
                   const Icon(
                     Icons.cloud_off_rounded,
                     size: 44,
-                    color: Color(0xFF0F766E),
+                    color: _brandOrange,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -229,7 +443,7 @@ class _ErrorState extends StatelessWidget {
                   Text(
                     message,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF58656B),
+                          color: const Color(0xFF42515A),
                         ),
                     textAlign: TextAlign.center,
                   ),

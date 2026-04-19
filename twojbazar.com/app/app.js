@@ -1,16 +1,14 @@
-﻿const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
+const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
 const LISTINGS_API_PATH = "/api/listings";
 const MANAGE_API_PATH = "/api/manage";
 const LISTINGS_JSON_URL = "../listings.json";
 const AI_GENERATE_API_PATH = "/api/generate-description";
 const MODERATION_API_PATH = "/api/moderate-listing";
-const PROFILE_STORAGE_KEY = "twojbazar-mobile-profile";
 const COUNTRY_FILTER_STORAGE_KEY = "twojbazar-mobile-country-filter";
 const LISTINGS_CACHE_KEY = "twojbazar-mobile-listings-cache";
 
 const appMain = document.getElementById("appMain");
 const topbarTitle = document.getElementById("topbarTitle");
-const topbarKicker = document.getElementById("topbarKicker");
 const topbarAction = document.getElementById("topbarAction");
 const backButton = document.getElementById("backButton");
 const bottomNavLinks = [...document.querySelectorAll(".bottom-nav-link")];
@@ -60,6 +58,75 @@ const HOME_CATEGORY_SHORTCUTS = [
   { label: "Transport", value: "Transport", hint: "Przejazdy, przewozy i pomoc w trasie" },
 ];
 
+const HELP_SECTIONS = [
+  {
+    country: "Szwecja",
+    intro: "Najważniejsze sprawy po przyjeździe do Szwecji to identyfikacja, podatki i pomoc w znalezieniu pracy.",
+    items: [
+      {
+        name: "Personnummer",
+        topic: "Dokumenty",
+        description: "Szwedzki numer identyfikacyjny potrzebny do wielu codziennych spraw.",
+        tasks: "Rejestracja pobytu, formalności urzędowe i podstawy codziennego funkcjonowania.",
+        url: "https://www.skatteverket.se/servicelankar/otherlanguages/inenglishengelska/individualsandemployees/movingtosweden.4.3810a01c150939e893f4077.html",
+      },
+      {
+        name: "Skatteverket",
+        topic: "Podatki",
+        description: "Główny urząd podatkowy w Szwecji odpowiedzialny też za wiele spraw rejestrowych.",
+        tasks: "Podatki, adres, rejestracja, personnummer i podstawowe sprawy urzędowe.",
+        url: "https://www.skatteverket.se/",
+      },
+      {
+        name: "Arbetsförmedlingen",
+        topic: "Praca",
+        description: "Szwedzki urząd pracy z ofertami i wsparciem dla osób szukających zatrudnienia.",
+        tasks: "Szukanie pracy, rejestracja i podstawowe wsparcie zawodowe.",
+        url: "https://www.arbetsformedlingen.se/",
+      },
+    ],
+  },
+  {
+    country: "Norwegia",
+    intro: "W Norwegii najczęściej potrzebne są informacje o pracy, podatkach i świadczeniach.",
+    items: [
+      {
+        name: "NAV",
+        topic: "Praca i świadczenia",
+        description: "Norweski urząd zajmujący się pracą, świadczeniami i wsparciem dla mieszkańców.",
+        tasks: "Oferty pracy, rejestracja, zasiłki i wsparcie przy zatrudnieniu.",
+        url: "https://www.nav.no/en/home",
+      },
+      {
+        name: "Skatteetaten",
+        topic: "Podatki",
+        description: "Norweski urząd podatkowy z informacjami o rozliczeniach i numerach identyfikacyjnych.",
+        tasks: "Karta podatkowa, rozliczenie i identyfikacja podatkowa.",
+        url: "https://www.skatteetaten.no/en/person/",
+      },
+    ],
+  },
+  {
+    country: "Dania",
+    intro: "W Danii najważniejsze są sprawy podatkowe i lokalne wsparcie przy pracy oraz zatrudnieniu.",
+    items: [
+      {
+        name: "SKAT",
+        topic: "Podatki",
+        description: "Duński system podatkowy i oficjalne informacje dla osób pracujących w Danii.",
+        tasks: "Podatki, karta podatkowa, rozliczenie i podstawowe formalności finansowe.",
+        url: "https://skat.dk/en-gb",
+      },
+      {
+        name: "Jobcenter",
+        topic: "Praca",
+        description: "Lokalne centrum pracy pomagające w znalezieniu zatrudnienia i kontakcie z rynkiem pracy.",
+        tasks: "Wsparcie przy szukaniu pracy i kontakt z urzędem pracy.",
+        url: "https://lifeindenmark.borger.dk/working",
+      },
+    ],
+  },
+];
 function getDefaultCountry() {
   return COUNTRY_OPTIONS[0];
 }
@@ -144,7 +211,8 @@ function formatPrice(price, currency = "EUR") {
     return "Cena do ustalenia";
   }
 
-  return /[a-zA-Z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017b]/.test(normalizedPrice)
+  // Check for Polish, Swedish, Norwegian, and Danish characters
+  return /[a-zA-Z\u0105\u0107\u0119\u0142\u0144\u00f3\u015b\u017a\u017c\u0104\u0106\u0118\u0141\u0143\u00d3\u015a\u0179\u017b\u00e5\u00e4\u00f6\u00c5\u00c4\u00d6\u00e6\u00f8\u00c6\u00d8]/.test(normalizedPrice)
     ? normalizedPrice
     : `${normalizedPrice} ${currency}`;
 }
@@ -158,7 +226,22 @@ function normalizeListingRecord(listing) {
     city: normalizeSpaces(listing?.city || ""),
     description: normalizeDescription(listing?.description || ""),
     currency: listing?.currency || getCurrencyForCountry(listing?.country),
+    status: normalizeStatus(listing?.status),
   };
+}
+
+function normalizeStatus(value) {
+  const normalizedValue = normalizeText(value);
+
+  if (normalizedValue === "inactive") {
+    return "inactive";
+  }
+
+  if (normalizedValue === "deleted") {
+    return "deleted";
+  }
+
+  return "active";
 }
 
 function mergeListings(listings = []) {
@@ -168,7 +251,7 @@ function mergeListings(listings = []) {
     const normalizedListing = normalizeListingRecord(listing);
     const id = String(normalizedListing.id || "").trim();
 
-    if (!id || !COUNTRY_OPTIONS.includes(normalizedListing.country)) {
+    if (!id || !COUNTRY_OPTIONS.includes(normalizedListing.country) || normalizedListing.status !== "active") {
       return;
     }
 
@@ -212,11 +295,8 @@ function getRoute() {
   if (hash === "add-ai") {
     return { name: "add", quickAi: true };
   }
-  if (hash === "account") {
-    return { name: "account" };
-  }
-  if (hash === "login") {
-    return { name: "login" };
+  if (hash === "help") {
+    return { name: "help" };
   }
   if (hash.startsWith("listing/")) {
     return { name: "listing", id: hash.split("/")[1] || "" };
@@ -231,14 +311,11 @@ function getRoute() {
 function setTopbar(route) {
   topbarTitle.textContent = "Twoj Bazar";
   backButton.classList.toggle("hidden", route.name === "home");
-  topbarAction.textContent = route.name === "account" && getStoredProfile() ? "Wyloguj" : "Konto";
-  topbarAction.setAttribute(
-    "aria-label",
-    route.name === "account" && getStoredProfile() ? "Wyloguj" : "Przejdz do konta"
-  );
+  topbarAction.textContent = "Dodaj";
+  topbarAction.setAttribute("aria-label", "Przejdź do dodawania ogłoszenia");
 
   bottomNavLinks.forEach((link) => {
-    link.classList.toggle("active", link.dataset.route === (["home", "add", "account"].includes(route.name) ? route.name : ""));
+    link.classList.toggle("active", link.dataset.route === (["home", "add", "help"].includes(route.name) ? route.name : ""));
   });
 
 }
@@ -251,7 +328,7 @@ async function requestApi(path, options = {}) {
       const response = await fetch(url, options);
 
       if (!response.ok) {
-        throw new Error(await readApiError(response, `Blad API (${response.status})`));
+        throw new Error(await readApiError(response, `Błąd API (${response.status})`));
       }
 
       return response;
@@ -261,7 +338,7 @@ async function requestApi(path, options = {}) {
     }
   }
 
-  throw lastError || new Error("Nie udalo sie polaczyc z API.");
+  throw lastError || new Error("Nie udało się połączyć z API.");
 }
 
 async function fetchListings() {
@@ -332,7 +409,7 @@ async function createListing(listing, imageFile) {
   });
 
   if (!response.ok) {
-    throw new Error(await readApiError(response, `Blad zapisu ogloszenia (${response.status})`));
+    throw new Error(await readApiError(response, `Błąd zapisu ogłoszenia (${response.status})`));
   }
 
   return response.json();
@@ -351,7 +428,7 @@ async function fetchManagedListing(token) {
   const response = await requestApi(`${MANAGE_API_PATH}/${encodeURIComponent(token)}`, { cache: "no-store" });
 
   if (!response.ok) {
-    throw new Error(await readApiError(response, "Blad pobierania linku zarzadzania"));
+    throw new Error(await readApiError(response, "Błąd pobierania linku zarządzania"));
   }
 
   return response.json();
@@ -367,7 +444,7 @@ async function updateManagedListing(token, listing) {
   });
 
   if (!response.ok) {
-    throw new Error(await readApiError(response, "Blad zapisu zmian"));
+    throw new Error(await readApiError(response, "Błąd zapisu zmian"));
   }
 
   return response.json();
@@ -383,7 +460,7 @@ async function updateManagedListingStatus(token, status) {
   });
 
   if (!response.ok) {
-    throw new Error(await readApiError(response, "Blad zmiany statusu"));
+    throw new Error(await readApiError(response, "Błąd zmiany statusu"));
   }
 
   return response.json();
@@ -395,8 +472,10 @@ async function deleteManagedListing(token) {
   });
 
   if (!response.ok) {
-    throw new Error(await readApiError(response, "Blad usuwania ogloszenia"));
+    throw new Error(await readApiError(response, "Błąd usuwania ogłoszenia"));
   }
+
+  return response.json();
 }
 
 function extractManagementToken(managementUrl) {
@@ -445,7 +524,7 @@ async function generateListingFromImage(file) {
   });
 
   if (!response.ok) {
-    throw new Error(await readApiError(response, "Blad AI"));
+    throw new Error(await readApiError(response, "Błąd AI"));
   }
 
   return response.json();
@@ -466,16 +545,6 @@ function readImageAsDataUrl(file) {
 
 }
 
-function getStoredProfile() {
-  try {
-    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (error) {
-    console.error("Profile storage error:", error);
-    return null;
-  }
-}
-
 function getStoredCountryFilter() {
   try {
     const value = localStorage.getItem(COUNTRY_FILTER_STORAGE_KEY);
@@ -491,16 +560,21 @@ function setStoredCountryFilter(country) {
   localStorage.setItem(COUNTRY_FILTER_STORAGE_KEY, value);
 }
 
-function setStoredProfile(profile) {
-  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-}
-
-function clearStoredProfile() {
-  localStorage.removeItem(PROFILE_STORAGE_KEY);
-}
-
 function navigate(hash) {
   window.location.hash = hash;
+}
+
+function getAppRouteUrl(hash) {
+  const normalizedHash = String(hash || "home").replace(/^#/, "");
+  return `${window.location.origin}${window.location.pathname}#${normalizedHash}`;
+}
+
+function getBackRoute(route) {
+  if (!route || route.name === "home") {
+    return "home";
+  }
+
+  return "home";
 }
 
 function getListingImage(listing) {
@@ -543,24 +617,25 @@ function renderHomeView(listings, query = "", country = getDefaultCountry(), cat
 
   appMain.innerHTML = `
     <section class="screen hero-card">
-      <p class="hero-kicker">Portal Polonii za granic\u0105</p>
-      <h2 class="hero-title">Og\u0142oszenia dla Polak\u00f3w w Skandynawii</h2>
-      <p class="hero-text">Praca dam, Pokój wynajme, Transport i Pomoc / formalnosci w Szwecji, Norwegii i Danii.</p>
-      <div class="hero-actions hero-actions-primary">
-        <a class="button button-accent" href="#add">Dodaj ogloszenie</a>
-      </div>
-      <div class="hero-subactions">
-        <a class="hero-secondary-link" href="#add-ai">Dodaj szybciej z pomoca AI</a>
-        <a class="hero-secondary-link" href="#account">Twoje konto</a>
-      </div>
-      <div class="hero-stats">
-        <div class="hero-stat">
-          <strong>Kraj i miasto maj\u0105 znaczenie</strong>
-          <span class="muted">szukaj lokalnie, tam gdzie naprawd\u0119 jeste\u015b</span>
+      <div class="hero-content">
+        <p class="hero-kicker">Portal Polonii za granic\u0105</p>
+        <h2 class="hero-title">Og\u0142oszenia dla Polak\u00f3w w Skandynawii</h2>
+        <p class="hero-text">Praca, pokoje, transport i pomoc w formalno\u015bciach w Szwecji, Norwegii i Danii.</p>
+        <div class="hero-actions hero-actions-primary">
+          <a class="button button-accent hero-cta" href="#add">Dodaj og\u0142oszenie</a>
         </div>
-        <div class="hero-stat">
-          <strong>Start w Skandynawii</strong>
-          <span class="muted">Kolejne kraje dodamy p\u00f3\u017aniej, gdy portal si\u0119 rozwinie.</span>
+        <div class="hero-subactions">
+          <a class="hero-secondary-link hero-ai-link" href="#add-ai">Dodaj szybciej z pomoc\u0105 AI</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <strong>Kraj i miasto maj\u0105 znaczenie</strong>
+            <span class="muted">szukaj lokalnie, tam gdzie naprawd\u0119 jeste\u015b</span>
+          </div>
+          <div class="hero-stat">
+            <strong>Start w Skandynawii</strong>
+            <span class="muted">Kolejne kraje dodamy p\u00f3\u017aniej, gdy portal si\u0119 rozwinie.</span>
+          </div>
         </div>
       </div>
     </section>
@@ -569,7 +644,7 @@ function renderHomeView(listings, query = "", country = getDefaultCountry(), cat
       <div class="section-heading">
         <p class="section-eyebrow">Start</p>
         <h2>Szukaj og\u0142osze\u0144</h2>
-        <p class="section-text">Filtruj po kraju lub wpisz oficjalna kategorie albo miasto.</p>
+        <p class="section-text">Filtruj po kraju lub wpisz oficjalną kategorię albo miasto.</p>
       </div>
       <div class="search-row">
         <label class="search-input-wrap" for="homeSearchInput">
@@ -579,8 +654,8 @@ function renderHomeView(listings, query = "", country = getDefaultCountry(), cat
           <span>Sortowanie</span>
           <select id="homeSortSelect">
             <option value="newest" ${activeSort === "newest" ? "selected" : ""}>Najnowsze</option>
-            <option value="price-asc" ${activeSort === "price-asc" ? "selected" : ""}>Najtansze</option>
-            <option value="price-desc" ${activeSort === "price-desc" ? "selected" : ""}>Najdrozsze</option>
+            <option value="price-asc" ${activeSort === "price-asc" ? "selected" : ""}>Najtańsze</option>
+            <option value="price-desc" ${activeSort === "price-desc" ? "selected" : ""}>Najdroższe</option>
           </select>
         </label>
         <div class="country-filter-group">
@@ -727,93 +802,44 @@ function renderDetailView(listing) {
   `;
 }
 
-function renderLoginView() {
+function renderHelpView() {
   appMain.innerHTML = `
-    <section class="screen login-card">
+    <section class="screen help-screen">
       <div class="section-heading">
-        <h2 class="login-title">Zaloguj si\u0119</h2>
-        <p class="section-text">Mobilny widok konta jest gotowy pod przysz\u0142e pod\u0142\u0105czenie do systemu logowania.</p>
-      </div>
-      <form class="form-stack" id="mobileLoginForm">
-        <label class="field-group">
-          <span>E-mail</span>
-          <input type="email" id="loginEmail" placeholder="Np. anna@example.com" required>
-        </label>
-        <label class="field-group">
-          <span>Has\u0142o</span>
-          <input type="password" id="loginPassword" placeholder="Wpisz has\u0142o" required>
-        </label>
-        <button class="button button-primary" type="submit">Zaloguj si\u0119</button>
-        <p class="status" id="loginStatus"></p>
-      </form>
-    </section>
-  `;
-
-  document.getElementById("mobileLoginForm")?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const email = document.getElementById("loginEmail")?.value.trim() || "";
-    const status = document.getElementById("loginStatus");
-
-    if (!email) {
-      status.textContent = "Podaj adres e-mail.";
-      status.className = "status error";
-      return;
-    }
-
-    setStoredProfile({
-      email,
-      name: email.split("@")[0] || "U\u017cytkownik",
-    });
-
-    navigate("account");
-  });
-
-}
-
-function renderAccountView() {
-  const profile = getStoredProfile();
-
-  if (!profile) {
-    appMain.innerHTML = `
-      <section class="screen account-card">
-        <div class="section-heading">
-          <h2 class="account-title">Twoje konto</h2>
-          <p class="section-text">Zaloguj si\u0119, aby przygotowa\u0107 profil pod przysz\u0142\u0105 wersj\u0119 aplikacji.</p>
+        <div>
+          <span class="section-kicker">Pomoc</span>
+          <h2>Pomoc dla Polaków w Skandynawii</h2>
         </div>
-        <div class="hero-stat">
-          <strong>Profil mobilny</strong>
-          <span class="muted">Widok konta jest gotowy do dalszej integracji z backendem logowania.</span>
-        </div>
-        <button class="button button-primary" id="goToLoginButton" type="button">Przejd\u017a do logowania</button>
-      </section>
-    `;
-
-    document.getElementById("goToLoginButton")?.addEventListener("click", () => navigate("login"));
-    return;
-  }
-
-  appMain.innerHTML = `
-    <section class="screen account-card">
-      <div class="section-heading">
-        <h2 class="account-title">Tw\u00f3j profil</h2>
-        <p class="section-text">Mobilny widok konta jest uproszczony i gotowy pod integracj\u0119 z pe\u0142nym systemem u\u017cytkownika.</p>
+        <p class="section-text">Najważniejsze urzędy, praca, podatki i dokumenty dla Szwecji, Norwegii i Danii.</p>
       </div>
-      <div class="hero-stat">
-        <strong>${escapeHtml(profile.name || "U\u017cytkownik")}</strong>
-        <span>${escapeHtml(profile.email || "")}</span>
-      </div>
-      <div class="quick-actions">
-        <a class="button button-secondary" href="#add-ai">Dodaj ze zdjecia AI</a>
-        <button class="button button-accent" id="logoutButton" type="button">Wyloguj</button>
+      <div class="stack-lg">
+        ${HELP_SECTIONS.map((section) => `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <span class="section-kicker">${escapeHtml(section.country)}</span>
+                <h3>${escapeHtml(section.country)}</h3>
+              </div>
+              <p class="section-text">${escapeHtml(section.intro)}</p>
+            </div>
+            <div class="stack-md">
+              ${section.items.map((item) => `
+                <article class="panel">
+                  <span class="pill">${escapeHtml(item.topic)}</span>
+                  <h4>${escapeHtml(item.name)}</h4>
+                  <p class="section-text">${escapeHtml(item.description)}</p>
+                  <p class="section-text"><strong>Co można tam załatwić:</strong> ${escapeHtml(item.tasks)}</p>
+                  <div class="quick-actions">
+                    <a class="button button-secondary" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Oficjalna strona</a>
+                  </div>
+                </article>
+              `).join("")}
+            </div>
+          </section>
+        `).join("")}
       </div>
     </section>
   `;
-
-  document.getElementById("logoutButton")?.addEventListener("click", () => {
-    clearStoredProfile();
-    navigate("account");
-  });
-
 }
 
 function renderAddView(quickAi = false) {
@@ -822,14 +848,14 @@ function renderAddView(quickAi = false) {
   appMain.innerHTML = `
     <section class="screen add-card">
       <div class="section-heading">
-        <h2 class="add-title">Dodaj ogloszenie</h2>
-        <p class="section-text">Najszybsza sciezka: zdjecie, AI, szybka korekta i publikacja po uzupelnieniu kraju, miasta i kontaktu.</p>
+        <h2 class="add-title">Dodaj ogłoszenie</h2>
+        <p class="section-text">Najszybsza ścieżka: zdjęcie, AI, szybka korekta i publikacja po uzupełnieniu kraju, miasta i kontaktu.</p>
       </div>
 
       <section class="panel">
         <div class="section-heading">
           <p class="hero-kicker">Asystent AI</p>
-          <h3>Dodaj ze zdjecia AI</h3>
+          <h3>Dodaj ze zdjęcia AI</h3>
         </div>
         <div class="steps">
           <div class="step"><span class="step-number">1</span><div><strong>Dodaj zdj\u0119cie</strong><p class="muted">Jedno wyra\u017ane zdj\u0119cie produktu lub us\u0142ugi.</p></div></div>
@@ -842,11 +868,11 @@ function renderAddView(quickAi = false) {
             <input id="mobileListingImageGallery" type="file" accept="image/*" class="file-input-native">
             <div class="file-upload-actions">
               <label for="mobileListingImage" class="file-upload-ui" id="mobileListingImageCameraTrigger">
-                <span class="file-upload-trigger">?? Zrob zdjecie</span>
+                <span class="file-upload-trigger">📷 Zrób zdjęcie</span>
                 <span class="file-upload-status">Aparat telefonu</span>
               </label>
               <label for="mobileListingImageGallery" class="file-upload-ui" id="mobileListingImageGalleryTrigger">
-                <span class="file-upload-trigger">??? Wybierz z galerii</span>
+                <span class="file-upload-trigger">🖼️ Wybierz z galerii</span>
                 <span class="file-upload-status" id="mobileImageFileStatus">Nie wybrano pliku</span>
               </label>
             </div>
@@ -858,7 +884,7 @@ function renderAddView(quickAi = false) {
           <button class="button button-ai" id="mobileGenerateButton" type="button">Uzupe\u0142nij og\u0142oszenie z AI</button>
           <div class="info-box-row">
             <article class="info-box"><h3>Co uzupe\u0142ni AI?</h3><p>Tytu\u0142, kategori\u0119, opis i najwa\u017cniejsze cechy.</p></article>
-            <article class="info-box"><h3>Po AI</h3><p>Popraw szkic i uzupelnij tylko kraj, miasto, kontakt i cene jesli trzeba.</p></article>
+            <article class="info-box"><h3>Po AI</h3><p>Popraw szkic i uzupełnij tylko kraj, miasto, kontakt i cenę, jeśli trzeba.</p></article>
           </div>
           <p class="status" id="mobileAiStatus"></p>
         </div>
@@ -866,7 +892,7 @@ function renderAddView(quickAi = false) {
 
       <form class="form-stack panel" id="mobileAddForm">
         <label class="field-group"><span>Tytu\u0142</span><input id="mobileTitle" type="text" placeholder="Np. Pok\u00f3j wynajm\u0119 od zaraz" required></label>
-        <label class="field-group"><span>Kategoria</span><select id="mobileCategory" required><option value="">Wybierz kategori\u0119</option>${CATEGORY_OPTIONS.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join("")}</select></label>
+        <label class="field-group"><span>Kategoria</span><select id="mobileCategory" required><option value="">Wybierz kategorię</option>${CATEGORY_OPTIONS.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join("")}</select></label>
         <label class="field-group"><span>Cena</span><input id="mobilePrice" type="text" placeholder="Np. 850 SEK"></label>
         <label class="field-group"><span>Kraj</span><select id="mobileCountry" required><option value="">Wybierz kraj</option>${COUNTRY_OPTIONS.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join("")}</select></label>
         <label class="field-group"><span>Miasto</span><input id="mobileCity" type="text" placeholder="Np. Sztokholm" required></label>
@@ -1018,7 +1044,7 @@ function renderAddView(quickAi = false) {
       document.getElementById("mobileDescription").value = data.description || "";
       document.getElementById("mobileCountry")?.scrollIntoView({ behavior: "smooth", block: "center" });
       document.getElementById("mobileCountry")?.focus();
-      aiStatus.textContent = "AI przygotowalo szkic. Sprawdz dane i uzupelnij tylko kraj, miasto, kontakt oraz cene jesli jest potrzebna.";
+      aiStatus.textContent = "AI przygotowało szkic. Sprawdź dane i uzupełnij tylko kraj, miasto, kontakt oraz cenę, jeśli jest potrzebna.";
       aiStatus.className = "status success";
     } catch (error) {
       console.error("Mobile AI generation error:", error);
@@ -1077,7 +1103,7 @@ function renderAddView(quickAi = false) {
 
       const createdListing = await createListing(listing, selectedImage);
       const managementToken = extractManagementToken(createdListing?.managementUrl);
-      formStatus.textContent = "Ogloszenie zostalo zapisane. Otwieram prywatny link do zarzadzania...";
+      formStatus.textContent = "Ogłoszenie zostało zapisane. Otwieram prywatny link do zarządzania...";
       formStatus.className = "status success";
       setTimeout(() => {
         navigate(managementToken ? `manage/${managementToken}` : "home");
@@ -1094,7 +1120,7 @@ function renderAddView(quickAi = false) {
     requestAnimationFrame(() => {
       imageInput?.scrollIntoView({ behavior: "smooth", block: "start" });
       imageInput?.focus();
-      aiStatus.textContent = "Dodaj zdjecie lub zrob zdjecie aparatem, a AI wypelni kategorie, tytul, opis i najwazniejsze cechy.";
+      aiStatus.textContent = "Dodaj zdjęcie lub zrób zdjęcie aparatem, a AI wypełni kategorię, tytuł, opis i najważniejsze cechy.";
       aiStatus.className = "status";
     });
   }
@@ -1104,8 +1130,8 @@ async function renderManageView(token) {
   if (!token) {
     appMain.innerHTML = `
       <section class="screen app-empty">
-        <h2 class="detail-title">Brak linku zarzadzania</h2>
-        <p class="section-text">Otwórz poprawny prywatny link do zarzadzania ogloszeniem.</p>
+        <h2 class="detail-title">Brak linku zarządzania</h2>
+        <p class="section-text">Otwórz poprawny prywatny link do zarządzania ogłoszeniem.</p>
       </section>
     `;
     return;
@@ -1119,21 +1145,22 @@ async function renderManageView(token) {
     console.error("Mobile manage listing load error:", error);
     appMain.innerHTML = `
       <section class="screen app-empty">
-        <h2 class="detail-title">Nie znaleziono linku zarzadzania</h2>
-        <p class="section-text">Ten prywatny link jest nieprawidlowy albo ogloszenie zostalo usuniete.</p>
+        <h2 class="detail-title">Nie znaleziono linku zarządzania</h2>
+        <p class="section-text">Ten prywatny link jest nieprawidłowy albo ogłoszenie zostało usunięte.</p>
       </section>
     `;
     return;
   }
 
   let pendingImage = listing.image || "";
-  const managementLink = `${window.location.origin}${window.location.pathname}#manage/${encodeURIComponent(token)}`;
+  const managementLink = getAppRouteUrl(`manage/${encodeURIComponent(token)}`);
+  const publicListingLink = `#listing/${encodeURIComponent(listing.id)}`;
 
   appMain.innerHTML = `
     <section class="screen add-card">
       <div class="section-heading">
-        <h2 class="add-title">Zarzadzaj ogloszeniem</h2>
-        <p class="section-text">Przez ten prywatny link mozesz edytowac ogloszenie, usunac je albo oznaczyc jako nieaktualne.</p>
+        <h2 class="add-title">Zarządzaj ogłoszeniem</h2>
+        <p class="section-text">Przez ten prywatny link możesz edytować ogłoszenie, usunąć je albo oznaczyć jako nieaktualne.</p>
       </div>
 
       <section class="panel">
@@ -1143,39 +1170,39 @@ async function renderManageView(token) {
           <p class="section-text">${escapeHtml(managementLink)}</p>
         </div>
         <div class="quick-actions">
-          <button class="button button-secondary" id="mobileCopyManageLinkButton" type="button">Kopiuj link</button>
-          <a class="button button-secondary" href="#listing/${escapeHtml(listing.id)}">Zobacz ogloszenie</a>
+            <button class="button button-secondary" id="mobileCopyManageLinkButton" type="button">Kopiuj link</button>
+            <a class="button button-secondary ${listing.status === "active" ? "" : "hidden"}" href="${escapeHtml(publicListingLink)}">Zobacz ogłoszenie</a>
         </div>
       </section>
 
       <form class="form-stack panel" id="mobileManageForm">
-        <label class="field-group"><span>Tytul</span><input id="mobileManageTitle" type="text" value="${escapeHtml(listing.title || "")}" required></label>
-        <label class="field-group"><span>Kategoria</span><select id="mobileManageCategory" required><option value="">Wybierz kategorie</option>${CATEGORY_OPTIONS.map((option) => `<option value="${escapeHtml(option)}" ${normalizeCategory(listing.category) === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select></label>
+        <label class="field-group"><span>Tytuł</span><input id="mobileManageTitle" type="text" value="${escapeHtml(listing.title || "")}" required></label>
+        <label class="field-group"><span>Kategoria</span><select id="mobileManageCategory" required><option value="">Wybierz kategorię</option>${CATEGORY_OPTIONS.map((option) => `<option value="${escapeHtml(option)}" ${normalizeCategory(listing.category) === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select></label>
         <label class="field-group"><span>Cena</span><input id="mobileManagePrice" type="text" value="${escapeHtml(listing.price || "")}"></label>
         <label class="field-group"><span>Kraj</span><select id="mobileManageCountry" required><option value="">Wybierz kraj</option>${COUNTRY_OPTIONS.map((option) => `<option value="${escapeHtml(option)}" ${listing.country === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select></label>
         <label class="field-group"><span>Miasto</span><input id="mobileManageCity" type="text" value="${escapeHtml(listing.city || "")}" required></label>
         <label class="field-group"><span>Opis</span><textarea id="mobileManageDescription" required>${escapeHtml(listing.description || "")}</textarea></label>
-        <label class="field-group"><span>Imie kontaktowe</span><input id="mobileManageContactName" type="text" value="${escapeHtml(listing.contactName || "")}"></label>
-        <label class="field-group"><span>Telefon</span><input id="mobileManagePhone" type="tel" value="${escapeHtml(listing.phone || "")}"></label>
+        <label class="field-group"><span>Imię kontaktowe</span><input id="mobileManageContactName" type="text" value="${escapeHtml(listing.contactName || "")}"></label>
+        <label class="field-group"><span>Imię kontaktowe</span><input id="mobileManageContactName" type="text" value="${escapeHtml(listing.contactName || "")}"></label>
         <label class="field-group"><span>E-mail</span><input id="mobileManageEmail" type="email" value="${escapeHtml(listing.email || "")}"></label>
-        <label class="field-inline-label"><input id="mobileManageShowPhone" type="checkbox" ${listing.showPhone ? "checked" : ""}><span>Pokaz telefon w ogloszeniu</span></label>
-        <label class="field-inline-label"><input id="mobileManageShowEmail" type="checkbox" ${listing.showEmail ? "checked" : ""}><span>Pokaz e-mail w ogloszeniu</span></label>
+        <label class="field-inline-label"><input id="mobileManageShowPhone" type="checkbox" ${listing.showPhone ? "checked" : ""}><span>Pokaż telefon w ogłoszeniu</span></label>
+        <label class="field-inline-label"><input id="mobileManageShowEmail" type="checkbox" ${listing.showEmail ? "checked" : ""}><span>Pokaż e-mail w ogłoszeniu</span></label>
         <div class="field-group">
-          <span>Zdjecie</span>
+          <span>Zdjęcie</span>
           <input id="mobileManageImage" type="file" accept="image/*" class="file-input-native">
           <label for="mobileManageImage" class="file-upload-ui">
-            <span class="file-upload-trigger">Wybierz nowe zdjecie</span>
-            <span class="file-upload-status" id="mobileManageImageStatus">${pendingImage ? "Aktualne zdjecie" : "Brak zdjecia"}</span>
+            <span class="file-upload-trigger">Wybierz nowe zdjęcie</span>
+            <span class="file-upload-status" id="mobileManageImageStatus">${pendingImage ? "Aktualne zdjęcie" : "Brak zdjęcia"}</span>
           </label>
         </div>
         <div class="image-preview ${pendingImage ? "" : "hidden"}" id="mobileManageImagePreview">
-          <div class="image-preview-thumb-wrap"><img id="mobileManageImagePreviewThumb" alt="Podglad zdjecia" ${pendingImage ? `src="${pendingImage}"` : ""}></div>
-          <button class="image-preview-remove" id="mobileManageRemoveImageButton" type="button">Usun zdjecie</button>
+          <div class="image-preview-thumb-wrap"><img id="mobileManageImagePreviewThumb" alt="Podgląd zdjęcia" ${pendingImage ? `src="${pendingImage}"` : ""}></div>
+          <button class="image-preview-remove" id="mobileManageRemoveImageButton" type="button">Usuń zdjęcie</button>
         </div>
         <div class="quick-actions">
           <button class="button button-primary" type="submit">Zapisz zmiany</button>
-          <button class="button button-secondary" type="button" id="mobileToggleStatusButton">${listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne"}</button>
-          <button class="button button-accent" type="button" id="mobileDeleteListingButton">Usun ogloszenie</button>
+          <button class="button button-secondary" type="button" id="mobileToggleStatusButton">${listing.status === "deleted" ? "Przywróć ogłoszenie" : listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne"}</button>
+          <button class="button button-accent" type="button" id="mobileDeleteListingButton">Usuń ogłoszenie</button>
         </div>
         <p class="status" id="mobileManageStatus"></p>
       </form>
@@ -1196,11 +1223,11 @@ async function renderManageView(token) {
   copyLinkButton?.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(managementLink);
-      statusElement.textContent = "Prywatny link zostal skopiowany.";
+      statusElement.textContent = "Prywatny link został skopiowany.";
       statusElement.className = "status success";
     } catch (error) {
       console.error("Mobile copy manage link error:", error);
-      statusElement.textContent = "Nie udalo sie skopiowac linku.";
+      statusElement.textContent = "Nie udało się skopiować linku.";
       statusElement.className = "status error";
     }
   });
@@ -1217,19 +1244,12 @@ async function renderManageView(token) {
     imageStatus.textContent = file.name;
   });
 
-  imageGalleryInput?.addEventListener("change", async () => {
-    if (imageInput) { imageInput.value = ""; }
-    await updateImagePreview(imageGalleryInput.files[0]);
-    aiStatus.textContent = "";
-    aiStatus.className = "status";
-  });
-
   removeImageButton?.addEventListener("click", () => {
     pendingImage = "";
     imageInput.value = "";
     imagePreview.classList.add("hidden");
     imagePreviewThumb.removeAttribute("src");
-    imageStatus.textContent = "Brak zdjecia";
+    imageStatus.textContent = "Brak zdjęcia";
   });
 
   form?.addEventListener("submit", async (event) => {
@@ -1254,48 +1274,54 @@ async function renderManageView(token) {
 
     try {
       listing = await updateManagedListing(token, payload);
-      statusElement.textContent = "Zmiany zostaly zapisane.";
+      statusElement.textContent = "Zmiany zostały zapisane.";
       statusElement.className = "status success";
-      toggleStatusButton.textContent = listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne";
+      toggleStatusButton.textContent = listing.status === "deleted" ? "Przywróć ogłoszenie" : listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne";
     } catch (error) {
       console.error("Mobile manage listing save error:", error);
-      statusElement.textContent = error.message || "Nie udalo sie zapisac zmian.";
+      statusElement.textContent = error.message || "Nie udało się zapisać zmian.";
       statusElement.className = "status error";
     }
   });
 
   toggleStatusButton?.addEventListener("click", async () => {
     try {
-      const nextStatus = listing.status === "inactive" ? "active" : "inactive";
+      const nextStatus =
+        listing.status === "deleted"
+          ? "active"
+          : listing.status === "inactive"
+            ? "active"
+            : "inactive";
       listing = await updateManagedListingStatus(token, nextStatus);
-      toggleStatusButton.textContent = listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne";
-      statusElement.textContent = listing.status === "inactive" ? "Ogloszenie oznaczono jako nieaktualne." : "Ogloszenie ponownie oznaczono jako aktualne.";
+      toggleStatusButton.textContent = listing.status === "deleted" ? "Przywróć ogłoszenie" : listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne";
+      statusElement.textContent = listing.status === "inactive" ? "Ogłoszenie oznaczono jako nieaktualne." : "Ogłoszenie ponownie oznaczono jako aktualne.";
       statusElement.className = "status success";
     } catch (error) {
       console.error("Mobile manage listing status error:", error);
-      statusElement.textContent = error.message || "Nie udalo sie zmienic statusu.";
+      statusElement.textContent = error.message || "Nie udało się zmienić statusu.";
       statusElement.className = "status error";
     }
   });
 
   deleteButton?.addEventListener("click", async () => {
-    if (!window.confirm("Usunac to ogloszenie?")) {
+    if (!window.confirm("Usunąć to ogłoszenie?")) {
       return;
     }
 
     try {
-      await deleteManagedListing(token);
-      statusElement.textContent = "Ogloszenie zostalo usuniete.";
+      listing = await deleteManagedListing(token);
+      toggleStatusButton.textContent = "Przywróć ogłoszenie";
+      statusElement.textContent = "Ogłoszenie zostało usunięte.";
       statusElement.className = "status success";
-      setTimeout(() => navigate("home"), 500);
     } catch (error) {
       console.error("Mobile manage listing delete error:", error);
-      statusElement.textContent = error.message || "Nie udalo sie usunac ogloszenia.";
+      statusElement.textContent = error.message || "Nie udało się usunąć ogłoszenia.";
       statusElement.className = "status error";
     }
   });
 
 }
+
 async function renderRoute() {
   const route = getRoute();
   setTopbar(route);
@@ -1310,6 +1336,10 @@ async function renderRoute() {
     renderDetailView(listing);
     return;
   }
+  if (route.name === "help") {
+    renderHelpView();
+    return;
+  }
   if (route.name === "manage") {
     await renderManageView(route.token);
     return;
@@ -1318,28 +1348,20 @@ async function renderRoute() {
     renderAddView(Boolean(route.quickAi));
     return;
   }
-  if (route.name === "login") {
-    renderLoginView();
-    return;
-  }
 
-  renderAccountView();
+  const listings = listingsCache.length ? [...listingsCache] : await fetchListings();
+  renderHomeView(listings, "", getStoredCountryFilter());
 }
-
 backButton.addEventListener("click", () => {
-  if (window.location.hash && window.location.hash !== "#home") {
-    history.length > 1 ? history.back() : navigate("home");
+  const route = getRoute();
+  const backRoute = getBackRoute(route);
+  if (backRoute !== route.name) {
+    navigate(backRoute);
   }
 });
 
 topbarAction.addEventListener("click", () => {
-  const route = getRoute();
-  if (route.name === "account" && getStoredProfile()) {
-    clearStoredProfile();
-    renderRoute();
-    return;
-  }
-  navigate("account");
+  navigate("add");
 });
 
 window.addEventListener("hashchange", renderRoute);
@@ -1349,6 +1371,8 @@ if (!window.location.hash) {
 } else {
   renderRoute();
 }
+
+
 
 
 

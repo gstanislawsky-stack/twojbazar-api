@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \"c:\\\\Users\\\\gstan\\\\OneDrive\\\\Dokument\\\\New project\\\\twojbazar\\.com\\\\flutter_app\"; flutter analyze$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

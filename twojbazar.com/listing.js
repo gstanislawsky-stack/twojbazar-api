@@ -120,6 +120,24 @@ function normalizeCategory(value) {
   return "Inne";
 }
 
+function normalizeStatus(value) {
+  const normalizedValue = normalizeText(value);
+
+  if (normalizedValue === "inactive") {
+    return "inactive";
+  }
+
+  if (normalizedValue === "deleted") {
+    return "deleted";
+  }
+
+  return "active";
+}
+
+function isPublicListing(listing) {
+  return normalizeStatus(listing?.status) === "active";
+}
+
 function formatPrice(price, currency = "EUR") {
   const normalizedPrice = String(price || "").trim();
 
@@ -127,7 +145,7 @@ function formatPrice(price, currency = "EUR") {
     return "Cena do ustalenia";
   }
 
-  return /[a-zA-Zaceln髎zzACELN覵ZZ]/.test(normalizedPrice)
+  return /[a-zA-Zaceln贸szzACELN脫SZZ]/.test(normalizedPrice)
     ? normalizedPrice
     : `${normalizedPrice} ${currency}`;
 }
@@ -143,17 +161,17 @@ function truncateText(value, maxLength = 160) {
     return normalized;
   }
 
-  return `${normalized.slice(0, maxLength - 1).trimEnd()}卄;
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}鈥;
 }
 
 function updateSeoMetadata(listing) {
   if (!listing) {
-    document.title = "Ogloszenie nie znalezione | TwojBazar";
+    document.title = "Og艂oszenie nie znalezione | TwojBazar";
 
     if (metaDescriptionElement) {
       metaDescriptionElement.setAttribute(
         "content",
-        "Nie znaleziono ogloszenia w TwojBazar. Sprawdz aktualne ogloszenia dla Polak體 w Szwecji, Norwegii i Danii."
+        "Nie znaleziono ogloszenia w TwojBazar. Sprawdz aktualne ogloszenia dla Polak贸w w Szwecji, Norwegii i Danii."
       );
     }
 
@@ -167,7 +185,7 @@ function updateSeoMetadata(listing) {
     listing.title,
     category,
     location,
-    listing.description || "Sprawdz szczeg髄y ogloszenia i dane kontaktowe w TwojBazar.",
+    listing.description || "Sprawdz szczeg贸ly ogloszenia i dane kontaktowe w TwojBazar.",
   ].filter(Boolean);
 
   document.title = `${titleParts.join(" | ")} | TwojBazar`;
@@ -186,7 +204,7 @@ function readCachedListing(id) {
       return null;
     }
 
-    return listings.find((listing) => String(listing.id) === String(id)) || null;
+    return listings.find((listing) => String(listing.id) === String(id) && isPublicListing(listing)) || null;
   } catch (error) {
     console.error("Listing details cache read error:", error);
     return null;
@@ -225,7 +243,7 @@ async function fetchListingById(id) {
     const response = await fetch(LISTINGS_JSON_URL, { cache: "no-store" });
 
     if (!response.ok) {
-      throw new Error(`Blad pobierania listings.json: ${response.status}`);
+      throw new Error(`B艂膮d pobierania listings.json: ${response.status}`);
     }
 
     const listings = await response.json();
@@ -241,7 +259,7 @@ async function fetchListingById(id) {
       const response = await fetch(url, { cache: "no-store" });
 
       if (!response.ok) {
-        throw new Error(`Blad pobierania ogloszen z API: ${response.status}`);
+        throw new Error(`B艂膮d pobierania og艂osze艅 z API: ${response.status}`);
       }
 
       const listings = await response.json();
@@ -256,7 +274,7 @@ async function fetchListingById(id) {
       });
     }
   }
-  const listing = sources.find((item) => String(item?.id) === String(id));
+  const listing = sources.find((item) => String(item?.id) === String(id) && isPublicListing(item));
 
   if (!listing) {
     return null;
@@ -285,11 +303,11 @@ function getListingImages(listing) {
 
 function renderNotFound() {
   updateSeoMetadata(null);
-  titleElement.textContent = "Ogloszenie nie znalezione";
-  introElement.textContent = "Sprawdz link albo wr骳 do listy ogloszen.";
+  titleElement.textContent = "Og艂oszenie nie znalezione";
+  introElement.textContent = "Sprawdz link albo wr贸c do listy ogloszen.";
   metaElement.innerHTML = "";
   priceElement.textContent = "";
-  descriptionElement.textContent = "Ogloszenie nie znalezione";
+  descriptionElement.textContent = "Og艂oszenie nie znalezione";
   contactPanel.classList.add("hidden");
   galleryElement.classList.add("hidden");
 }
@@ -359,8 +377,8 @@ function renderListing(listing) {
   const currency = listing.currency || getCurrencyForCountry(listing.country);
 
   updateSeoMetadata(listing);
-  titleElement.textContent = listing.title || "Ogloszenie";
-  introElement.textContent = "Sprawdz szczeg髄y ogloszenia i dane kontaktowe.";
+  titleElement.textContent = listing.title || "Og艂oszenie";
+  introElement.textContent = "Sprawdz szczeg贸ly ogloszenia i dane kontaktowe.";
   metaElement.innerHTML = `
     <span class="listing-details-badge">${escapeHtml(category)}</span>
     <span><strong>Kategoria:</strong> ${escapeHtml(category)}</span>
@@ -401,6 +419,9 @@ document.addEventListener("click", (event) => {
     thumb.classList.toggle("active", thumb === galleryButton);
   });
 });
+
+
+
 
 
 

@@ -1,8 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f766e">
   <meta name="description" content="Dodaj nowe ogłoszenie w TwojBazar.">
   <title>Dodaj ogłoszenie | TwojBazar</title>
   <link rel="stylesheet" href="style.css">
@@ -15,25 +18,21 @@
         <span class="logo-text">TwojBazar</span>
       </a>
 
-      <button
-        class="menu-toggle"
-        type="button"
-        aria-label="Otwórz menu"
-        aria-expanded="false"
-        aria-controls="site-navigation"
-      >
+      <button class="menu-toggle" type="button" aria-label="Otwórz menu" aria-expanded="false" aria-controls="site-navigation">
         <span></span>
         <span></span>
         <span></span>
       </button>
+      <div class="nav-center">
 
       <nav class="nav-links" id="site-navigation">
         <a href="index.html#start">Start</a>
         <a href="index.html#kategorie">Kategorie</a>
-        <a href="pomoc.html">Pomoc</a>
+        <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
         <a href="index.html#kontakt">Kontakt</a>
       </nav>
-
+      </div>
+        <a href="index.html#ogloszenia" class="nav-link-secondary">Przeglądaj</a>
       <div class="navbar-cta">
         <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
       </div>
@@ -49,7 +48,7 @@
           <span class="page-kicker">Nowe ogłoszenie</span>
           <h1 class="page-title">Dodaj ofertę i pokaż ją kupującym za granicą</h1>
           <p class="page-intro">
-            Wypełnij formularz, dodaj zdjęcie i skorzystaj z AI, które podpowie tytuł,
+            Wypełnij formularz albo dodaj zdjęcie, a AI pomoże przygotować tytuł,
             kategorię, opis i najważniejsze cechy.
           </p>
 
@@ -58,7 +57,7 @@
               <div class="ai-generator-header">
                 <div>
                   <p class="ai-kicker">Asystent AI</p>
-                  <h2 id="aiGeneratorTitle">Dodaj zdjęcie i uzupełnij ogłoszenie</h2>
+                  <h2 id="aiQuickTitle">Dodaj ogłoszenie ze zdjęcia</h2>
                   <p class="ai-generator-intro">3 szybkie kroki: dodaj zdjęcie, uruchom AI i sprawdź wynik.</p>
                   <p class="field-hint">Najszybsza ścieżka: zdjęcie, AI, szybka korekta i publikacja po uzupełnieniu kraju, miasta i kontaktu.</p>
                 </div>
@@ -89,7 +88,7 @@
               </div>
 
               <div class="form-field" data-field="image">
-                <label for="listingImage">Zdjęcie oferty</label>
+                <label class="photo-field-label">Zdjęcie oferty</label>
                 <input id="listingImage" name="listingImage" type="file" accept="image/*" capture="environment" class="file-input-native">
                 <input id="listingImageGallery" name="listingImageGallery" type="file" accept="image/*" class="file-input-native">
                 <div class="file-upload-actions">
@@ -104,10 +103,10 @@
                 </div>
                 <div class="image-preview hidden" id="imagePreview">
                   <img id="imagePreviewThumb" alt="Podgląd wybranego zdjęcia">
-                  <button type="button" class="image-preview-remove" id="removeImageButton">Usuń zdjęcie</button>
+                  <button type="button" class="image-preview-remove" id="removeAiImageButton">Usuń zdjęcie</button>
                 </div>
                 <span class="field-hint">Dodaj jedno wyraźne zdjęcie produktu lub usługi.</span>
-                <span class="field-error">Dodaj zdjęcie, aby skorzystać z generowania opisu.</span>
+                <span class="form-status" id="aiStatus" aria-live="polite">Po dodaniu zdjęcia możesz użyć AI.</span>
               </div>
 
               <button type="button" class="button ai-generate-button" id="generateFromImageButton">
@@ -116,15 +115,15 @@
 
               <div class="ai-preview" id="aiPreview">
                 <div class="ai-preview-copy">
-                  <p class="ai-preview-title">Co uzupełni AI?</p>
-                  <p class="ai-preview-text">
                     Tytuł, kategorię, opis i najważniejsze cechy.
+                  <p class="ai-preview-text">
+                    Najlepsze efekty dają jasne i czytelne zdjęcia.
                   </p>
                 </div>
 
                 <div class="ai-features-card">
-                  <p class="ai-features-label">Wskazówka</p>
-                  <p class="ai-preview-text">Najlepsze efekty dają jasne i czytelne zdjęcia.</p>
+                <p><strong>Uzupełniono z AI:</strong> <span id="aiFilledFields">Jeszcze nic nie uzupełniono.</span></p>
+                <p>Sprawdź wynik, popraw dane i uzupełnij kraj, miasto oraz kontakt przed publikacją.</p>
                   <ul class="ai-features-list hidden" id="featuresList">
                     <li>Brak wygenerowanych cech</li>
                   </ul>
@@ -136,40 +135,40 @@
             </section>
 
             <div class="form-field" data-field="title">
-              <label for="title">Tytuł</label>
+              <label for="title">Tytu?</label>
               <input id="title" name="title" type="text" placeholder="Np. Rower miejski premium">
-              <span class="field-hint">Minimum 5 znaków.</span>
-              <span class="field-error">Podaj tytuł o długości co najmniej 5 znaków.</span>
+              <span class="field-hint">Wybierz jedną z oficjalnych kategorii projektu.</span>
+              <span class="field-error" data-error-for="category">Wybierz kategorię.</span>
             </div>
 
             <div class="form-row">
               <div class="form-field" data-field="category">
                 <label for="category">Kategoria</label>
                 <select id="category" name="category">
-                  <option value="">Wybierz kategorię</option>
+                  <option value="Mieszkanie wynajmę">Mieszkanie wynajmę</option>
                   <option value="Praca dam">Praca dam</option>
                   <option value="Praca szukam">Praca szukam</option>
-                  <option value="Mieszkanie wynajmę">Mieszkanie wynajmę</option>
-                  <option value="Mieszkanie szukam">Mieszkanie szukam</option>
                   <option value="Pokój wynajmę">Pokój wynajmę</option>
-                  <option value="Pokój szukam">Pokój szukam</option>
+                  <option value="Mieszkanie szukam">Mieszkanie szukam</option>
                   <option value="Usługi oferuję">Usługi oferuję</option>
                   <option value="Usługi szukam">Usługi szukam</option>
                   <option value="Sprzedam">Sprzedam</option>
                   <option value="Kupię">Kupię</option>
-                  <option value="Transport">Transport</option>
+                  <option value="Sprzedam">Sprzedam</option>
                   <option value="Pomoc / formalności">Pomoc / formalności</option>
+                  <option value="Transport">Transport</option>
+              <span class="field-error" data-error-for="category">Wybierz kategorię.</span>
                   <option value="Poznam ludzi">Poznam ludzi</option>
                   <option value="Inne">Inne</option>
                 </select>
-                <span class="field-error">Wybierz kategorię ogłoszenia.</span>
+              <span class="field-hint">Krótko i konkretnie, np. Rower miejski w Malmö.</span>
               </div>
 
               <div class="form-field" data-field="price">
                 <label for="price">Cena</label>
                 <input id="price" name="price" type="number" min="0" step="1" placeholder="Np. 300 EUR">
-                <span class="field-hint" id="priceHint">Wpisz kwotę w EUR.</span>
-                <span class="field-error">Podaj prawidłową cenę większą lub równą 0.</span>
+                <span class="field-hint">Zostaw puste, jeśli cena nie dotyczy ogłoszenia.</span>
+                <span class="field-error" data-error-for="price">Podaj poprawną cenę.</span>
               </div>
             </div>
 
@@ -182,21 +181,21 @@
                   <option value="Norwegia">Norwegia</option>
                   <option value="Dania">Dania</option>
                 </select>
-                <span class="field-error">Wybierz kraj ogłoszenia.</span>
+                <span class="field-error" data-error-for="country">Wybierz kraj.</span>
               </div>
 
               <div class="form-field" data-field="city">
                 <label for="city">Miasto</label>
                 <input id="city" name="city" type="text" placeholder="Np. Sztokholm">
-                <span class="field-error">Podaj miasto o długości co najmniej 2 znaków.</span>
+                <span class="field-error" data-error-for="city">Podaj miasto.</span>
               </div>
             </div>
 
             <div class="form-field" data-field="description">
               <label for="description">Opis</label>
               <textarea id="description" name="description" placeholder="Opisz stan, odbiór, najważniejsze cechy i informacje dla kupującego."></textarea>
-              <span class="field-hint">Minimum 20 znaków, najlepiej konkretnie i rzeczowo.</span>
-              <span class="field-error">Opis powinien mieć co najmniej 20 znaków.</span>
+              <span class="field-hint">Dodaj informacje o stanie, odbiorze, lokalizacji i ważnych szczegółach.</span>
+              <span class="field-error" data-error-for="description">Dodaj opis ogłoszenia.</span>
             </div>
 
             <section class="form-section" aria-labelledby="contactSectionTitle">
@@ -247,22 +246,22 @@
         <aside class="info-panel">
           <h2>Jak przygotować dobre ogłoszenie?</h2>
           <p>
-            Krótkie i konkretne treści działają najlepiej. Jasny tytuł, cena i lokalizacja
+            Krótkie, konkretne ogłoszenia z prawdziwym zdjęciem i jasnym kontaktem
             pomagają szybciej znaleźć kupującego.
           </p>
 
           <ul class="info-list">
             <li>
               <strong>Użyj jasnego tytułu</strong>
-              Kupujący szybciej znajdą ofertę, gdy tytuł opisuje produkt bez zbędnych ozdobników.
+              Kupujący od razu powinien wiedzieć, czego dotyczy oferta.
             </li>
             <li>
-              <strong>Dodaj zdjęcie</strong>
-              Jedno czytelne zdjęcie wystarczy, aby AI zaproponowało dobry start dla treści ogłoszenia.
+              <strong>Dodaj miasto i kraj</strong>
+              Jednoznaczna lokalizacja pomaga znaleźć osoby w okolicy.
             </li>
             <li>
               <strong>Zweryfikuj sugestie AI</strong>
-              Traktuj wygenerowany opis jako szkic, który warto doprecyzować przed publikacją.
+              Traktuj AI jako pomoc, a finalny opis dopasuj do swojej oferty.
             </li>
           </ul>
         </aside>

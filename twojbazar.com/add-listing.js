@@ -1,4 +1,4 @@
-﻿const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
+const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
 const API_PATHS = {
   generateDescription: "/api/generate-description",
   moderateListing: "/api/moderate-listing",
@@ -118,7 +118,7 @@ function setStatus(element, message, type = "") {
 }
 
 async function readErrorResponse(response) {
-  const fallbackMessage = `BÅ‚Ä…d serwera: ${response.status}`;
+  const fallbackMessage = `Błąd serwera: ${response.status}`;
 
   try {
     const data = await response.clone().json();
@@ -179,7 +179,7 @@ async function fetchWithApiFallback(path, options = {}) {
     }
   }
 
-  throw lastError || new Error("Nie udaÅ‚o siÄ™ poÅ‚Ä…czyÄ‡ z API.");
+  throw lastError || new Error("Nie udało się połączyć z API.");
 }
 
 function normalizeSpaces(value) {
@@ -275,7 +275,7 @@ function updatePriceField() {
   const currency = getCurrencyForCountry(countrySelect?.value);
 
   if (priceHint) {
-    priceHint.textContent = `Wpisz kwotÄ™ w ${currency}.`;
+    priceHint.textContent = `Wpisz kwotę w ${currency}.`;
   }
 
   if (priceInput) {
@@ -347,7 +347,7 @@ function readImageAsDataUrl(file) {
 
     const reader = new FileReader();
     reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () => reject(new Error("Nie udaÅ‚o siÄ™ odczytaÄ‡ zdjÄ™cia."));
+    reader.onerror = () => reject(new Error("Nie udało się odczytać zdjęcia."));
     reader.readAsDataURL(file);
   });
 }
@@ -391,7 +391,7 @@ async function updateImagePreview(file) {
 
   if (!file.type.startsWith("image/")) {
     resetImageSelection();
-    setStatus(aiStatus, "Wybrany plik nie jest obrazem. Dodaj zdjÄ™cie produktu lub usÅ‚ugi.", "error");
+    setStatus(aiStatus, "Wybrany plik nie jest obrazem. Dodaj zdjęcie produktu lub usługi.", "error");
     return;
   }
 
@@ -491,14 +491,14 @@ async function generateListingFromImage() {
 
   if (!selectedImage) {
     setFieldState("image", false);
-    setStatus(aiStatus, "Dodaj zdjÄ™cie, aby wygenerowaÄ‡ opis ze zdjÄ™cia.", "error");
+    setStatus(aiStatus, "Dodaj zdjęcie, aby wygenerować opis ze zdjęcia.", "error");
     return;
   }
 
   setFieldState("image", true);
-  setStatus(aiStatus, "AnalizujÄ™ zdjÄ™cie i przygotowujÄ™ propozycjÄ™ treÅ›ci...", "");
+  setStatus(aiStatus, "Analizuję zdjęcie i przygotowuję propozycję treści...", "");
   generateFromImageButton.disabled = true;
-  generateFromImageButton.textContent = "â³ AnalizujÄ™ zdjÄ™cie...";
+  generateFromImageButton.textContent = "⏳ Analizuję zdjęcie...";
 
   const formData = new FormData();
   formData.append("image", selectedImage);
@@ -522,11 +522,11 @@ async function generateListingFromImage() {
       features: Array.isArray(data.features) ? data.features : [],
     });
 
-    setStatus(aiStatus, "AI przygotowalo szkic. Sprawdz dane i uzupelnij tylko kraj, miasto, kontakt oraz cene jesli jest potrzebna.", "success");
+    setStatus(aiStatus, "AI przygotowało szkic. Sprawdź dane i uzupełnij tylko kraj, miasto, kontakt oraz cenę, jeśli jest potrzebna.", "success");
   } catch (error) {
     const errorMessage = error instanceof Error
       ? error.message
-      : "Nie udaÅ‚o siÄ™ wygenerowaÄ‡ opisu ze zdjÄ™cia.";
+      : "Nie udało się wygenerować opisu ze zdjęcia.";
 
     setStatus(
       aiStatus,
@@ -538,7 +538,7 @@ async function generateListingFromImage() {
     });
   } finally {
     generateFromImageButton.disabled = false;
-    generateFromImageButton.textContent = "âœ¨ UzupeÅ‚nij ogÅ‚oszenie z AI";
+    generateFromImageButton.textContent = "✨ Uzupełnij ogłoszenie z AI";
   }
 }
 
@@ -668,12 +668,12 @@ if (form) {
       }
 
       if (!moderationResult.allowed) {
-        setStatus(formStatus, "OgÅ‚oszenie narusza zasady serwisu.", "error");
+        setStatus(formStatus, "Ogłoszenie narusza zasady serwisu.", "error");
         return;
       }
 
       const createdListing = await createListing(listing, selectedImage);
-      setStatus(formStatus, "OgÅ‚oszenie zostaÅ‚o zapisane. Otwieram prywatny link do zarzÄ…dzania...", "success");
+      setStatus(formStatus, "Ogłoszenie zostało zapisane. Otwieram prywatny link do zarządzania...", "success");
 
       if (createdListing?.managementUrl) {
         window.location.href = createdListing.managementUrl;
@@ -685,7 +685,7 @@ if (form) {
       console.error("Listing save error:", error);
       setStatus(
         formStatus,
-        error instanceof Error ? error.message : "Nie udalo sie zapisac ogloszenia. Spróbuj ponownie.",
+        error instanceof Error ? error.message : "Nie udało się zapisać ogłoszenia. Spróbuj ponownie.",
         "error"
       );
     }
@@ -698,7 +698,7 @@ if (isQuickAiMode && aiQuickStartSection) {
   requestAnimationFrame(() => {
     aiQuickStartSection.scrollIntoView({ behavior: "smooth", block: "start" });
     imageInput?.focus();
-    setStatus(aiStatus, "Dodaj zdjecie lub zrob zdjecie aparatem, a AI wypelni kategorie, tytul, opis i najwazniejsze cechy.", "");
+    setStatus(aiStatus, "Dodaj zdjęcie lub zrób zdjęcie aparatem, a AI wypełni kategorię, tytuł, opis i najważniejsze cechy.", "");
   });
 }
 
