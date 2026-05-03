@@ -1,4 +1,4 @@
-const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
+﻿const RENDER_API_BASE_URL = "https://twojbazar-api.onrender.com";
 const API_BASE_PATH = "/api/manage";
 const CATEGORY_OPTIONS = [
   "Praca dam",
@@ -48,11 +48,13 @@ const viewListingButton = document.getElementById("viewListingButton");
 
 let currentListing = null;
 let pendingImage = "";
+let pendingImageFile = null;
+let shouldClearImage = false;
 
-if (menuToggle && navLinks && navActions) {
+if (menuToggle && navLinks) {
   menuToggle.addEventListener("click", () => {
     const isOpen = navLinks.classList.toggle("open");
-    navActions.classList.toggle("open", isOpen);
+    navActions?.classList.toggle("open", isOpen);
     menuToggle.setAttribute("aria-expanded", String(isOpen));
   });
 }
@@ -124,6 +126,12 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function parsePriceValue(value) {
+  const normalizedValue = normalizeSpaces(value).replace(/\s+/g, "").replace(",", ".");
+  const price = Number(normalizedValue);
+  return Number.isFinite(price) ? price : "";
+}
+
 function normalizeCategory(value) {
   const rawCategory = normalizeSpaces(value);
 
@@ -180,20 +188,35 @@ function updateViewActions(listing) {
     publicLinkText.textContent = publicUrl;
   }
 
-  manageLinkText.textContent = managementUrl;
-  viewListingButton.href = publicUrl;
-  viewListingButton.classList.toggle("hidden", listing.status !== "active");
-  toggleStatusButton.textContent = listing.status === "deleted" ? "Przywróć ogłoszenie" : listing.status === "inactive" ? "Oznacz jako aktualne" : "Oznacz jako nieaktualne";
+  if (manageLinkText) {
+    manageLinkText.textContent = managementUrl;
+  }
+
+  if (viewListingButton) {
+    viewListingButton.href = publicUrl;
+    viewListingButton.classList.toggle("hidden", listing.status !== "active");
+  }
+
+  if (toggleStatusButton) {
+    toggleStatusButton.textContent = listing.status === "deleted"
+      ? "Przywróć ogłoszenie"
+      : listing.status === "inactive"
+        ? "Oznacz jako aktualne"
+        : "Oznacz jako nieaktualne";
+  }
+
   intro.textContent = listing.status === "deleted"
     ? "To ogłoszenie jest usunięte publicznie. Nadal możesz je przywrócić albo edytować przez ten prywatny link."
     : listing.status === "inactive"
       ? "To ogłoszenie jest oznaczone jako nieaktualne. Możesz je ponownie aktywować albo edytować."
-      : "Przez ten prywatny link możesz edytować, usunąć albo oznaczyć ogłoszenie jako nieaktualne.";
+      : "Przez ten prywatny link możesz edytować, wstrzymać albo usunąć ogłoszenie.";
 }
 
 function populateForm(listing) {
   currentListing = listing;
   pendingImage = listing.image || "";
+  pendingImageFile = null;
+  shouldClearImage = false;
   titleInput.value = listing.title || "";
   categorySelect.value = normalizeCategory(listing.category);
   priceInput.value = listing.price || "";
@@ -223,7 +246,7 @@ function buildListingPayload() {
   return {
     title: normalizeSpaces(titleInput.value),
     category: normalizeCategory(categorySelect.value),
-    price: normalizeSpaces(priceInput.value),
+    price: parsePriceValue(priceInput.value),
     country: normalizeSpaces(countrySelect.value),
     city: normalizeSpaces(cityInput.value),
     description: normalizeDescription(descriptionInput.value),
@@ -232,23 +255,7 @@ function buildListingPayload() {
     email: normalizeSpaces(emailInput.value),
     showPhone: Boolean(showPhoneInput.checked),
     showEmail: Boolean(showEmailInput.checked),
-    image: pendingImage,
-    images: pendingImage ? [pendingImage] : [],
   };
-}
-
-async function readImageAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    if (!file) {
-      resolve("");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () => reject(new Error("Nie udało się odczytać zdjęcia."));
-    reader.readAsDataURL(file);
-  });
 }
 
 async function loadListing() {
@@ -258,12 +265,22 @@ async function loadListing() {
 }
 
 async function updateListing() {
+  const payload = buildListingPayload();
+  const formData = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    formData.append(key, typeof value === "boolean" ? String(value) : String(value));
+  });
+
+  if (pendingImageFile) {
+    formData.append("image", pendingImageFile);
+  } else if (shouldClearImage) {
+    formData.append("clearImage", "true");
+  }
+
   const response = await fetchWithFallback(getManagementPath(manageToken), {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(buildListingPayload()),
+    body: formData,
   });
 
   return response.json();
@@ -312,7 +329,9 @@ imageInput?.addEventListener("change", async () => {
     return;
   }
 
-  pendingImage = await readImageAsDataUrl(file);
+  pendingImageFile = file;
+  shouldClearImage = false;
+  pendingImage = URL.createObjectURL(file);
   imagePreviewThumb.src = pendingImage;
   imagePreview.classList.remove("hidden");
   imageStatus.textContent = file.name;
@@ -320,6 +339,8 @@ imageInput?.addEventListener("change", async () => {
 
 removeImageButton?.addEventListener("click", () => {
   pendingImage = "";
+  pendingImageFile = null;
+  shouldClearImage = true;
   imageInput.value = "";
   imagePreview.classList.add("hidden");
   imagePreviewThumb.removeAttribute("src");
@@ -355,10 +376,19 @@ toggleStatusButton?.addEventListener("click", async () => {
   }
 
   try {
-    const nextStatus = currentListing.status === "deleted" ? "active" : currentListing.status === "inactive" ? "active" : "inactive";
+    const nextStatus = currentListing.status === "deleted"
+      ? "active"
+      : currentListing.status === "inactive"
+        ? "active"
+        : "inactive";
     const listing = await updateListingStatus(nextStatus);
     populateForm(listing);
-    setStatus(nextStatus === "inactive" ? "Ogłoszenie oznaczono jako nieaktualne." : "Ogłoszenie ponownie oznaczono jako aktywne.", "success");
+    setStatus(
+      nextStatus === "inactive"
+        ? "Ogłoszenie oznaczono jako nieaktualne."
+        : "Ogłoszenie ponownie oznaczono jako aktywne.",
+      "success"
+    );
   } catch (error) {
     console.error("Manage listing status error:", error);
     setStatus(error.message || "Nie udało się zmienić statusu.", "error");
@@ -379,8 +409,3 @@ deleteListingButton?.addEventListener("click", async () => {
     setStatus(error.message || "Nie udało się usunąć ogłoszenia.", "error");
   }
 });
-
-
-
-
-

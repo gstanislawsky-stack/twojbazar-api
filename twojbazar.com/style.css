@@ -3846,14 +3846,15 @@ body {
 @media (min-width: 821px) {
   #siteHeader.navbar {
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    grid-template-columns: max-content max-content max-content;
     align-items: center;
-    justify-content: initial;
+    justify-content: center;
     flex-wrap: nowrap;
-    min-height: 76px;
-    width: 100%;
-    gap: clamp(28px, 4vw, 68px);
-    padding: 14px 20px;
+    min-height: 58px;
+    width: min(100%, 960px);
+    gap: clamp(28px, 4.5vw, 64px);
+    margin-inline: auto;
+    padding: 8px 18px;
     border-radius: 999px;
   }
 
@@ -3872,7 +3873,7 @@ body {
     justify-content: center;
     flex: none;
     width: auto;
-    max-width: 100%;
+    max-width: none;
     min-width: 0;
     margin: 0;
     padding: 0;
@@ -3887,12 +3888,12 @@ body {
     width: auto;
     max-width: none;
     min-width: 0;
-    gap: clamp(12px, 1.25vw, 20px);
+    gap: clamp(18px, 2vw, 28px);
     margin: 0;
-    padding: 6px 10px;
+    padding: 0;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    background: transparent;
+    box-shadow: none;
     overflow: visible;
   }
 
@@ -3900,7 +3901,7 @@ body {
   #siteHeader .nav-link-secondary {
     width: auto;
     min-width: 0;
-    padding: 8px 2px;
+    padding: 8px 0;
     white-space: nowrap;
   }
 
@@ -3921,5 +3922,158 @@ body {
     width: auto;
     min-width: max-content;
     white-space: nowrap;
+    padding: 12px 24px;
+  }
+}
+
+@media (min-width: 821px) {
+  .site-main {
+    padding-top: 0;
+  }
+
+  .site-main > .hero {
+    margin-top: -1px;
+  }
+}
+
+/* final-desktop-hero-balance */
+@media (min-width: 821px) {
+  .page-shell {
+    padding-top: 18px;
+  }
+
+  .site-main {
+    padding-top: 0;
+  }
+
+  .site-main > .hero,
+  .hero {
+    margin-top: 0;
+    gap: clamp(22px, 2.4vw, 34px);
+    align-items: stretch;
+  }
+
+  .hero-copy {
+    padding: clamp(40px, 4.2vw, 58px) clamp(44px, 5vw, 72px);
+  }
+
+  .hero h1 {
+    max-width: 12.8ch;
+    margin: 20px 0 20px;
+    font-size: clamp(3.55rem, 4.75vw, 4.55rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+  }
+
+  .hero-subtitle,
+  .hero p {
+    max-width: 50ch;
+    font-size: 1.08rem;
+    line-height: 1.72;
+  }
+
+  .search-bar {
+    max-width: 590px;
+    margin-top: 30px;
+  }
+
+  .hero-actions {
+    gap: 16px;
+    margin-top: 26px;
+  }
+
+  .hero-actions .button {
+    min-width: 210px;
+    min-height: 52px;
+  }
+}
+
+::selection {
+  color: #ffffff;
+  background: rgba(255, 106, 0, 0.72);
+}
+
+/* final-subpage-navbar-clearance */
+@media (min-width: 821px) {
+  .subpage-main {
+    margin-top: 34px;
+  }
+
+  .subpage-main .add-listing-layout,
+  .subpage-main .listing-details-layout {
+    align-items: start;
+  }
+}
+
+@media (max-width: 820px) {
+  .subpage-main {
+    margin-top: 20px;
+  }
+}
+
+/* final-navbar-floating-polish */
+@media (min-width: 821px) {
+  .page-shell {
+    padding-top: 24px;
+  }
+
+  #siteHeader.navbar {
+    width: min(calc(100% - 64px), 1060px);
+    max-width: 1060px;
+    min-height: 56px;
+    margin: 0 auto 34px;
+    padding: 8px 18px;
+    gap: clamp(30px, 4vw, 58px);
+    background: rgba(15, 25, 39, 0.64);
+    border-color: rgba(255, 255, 255, 0.09);
+    box-shadow:
+      0 18px 44px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  #siteHeader .nav-links {
+    gap: clamp(18px, 1.8vw, 24px);
+    padding: 5px 14px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  #siteHeader .nav-links a,
+  #siteHeader .nav-link-secondary {
+    padding: 6px 0;
+  }
+
+  #siteHeader .nav-cta {
+    padding: 11px 24px;
+    box-shadow: 0 12px 26px rgba(255, 106, 0, 0.24);
+  }
+
+  .site-main > .hero,
+  .hero {
+    margin-top: 0;
+  }
+
+  .subpage-main {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 820px) {
+  .navbar {
+    margin-bottom: 22px;
+    background: rgba(15, 25, 39, 0.68);
+    box-shadow:
+      0 14px 34px rgba(0, 0, 0, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .hero,
+  .subpage-main {
+    margin-top: 0;
   }
 }

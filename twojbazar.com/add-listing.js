@@ -43,6 +43,7 @@ console.debug("[TwojBazar WWW] image inputs", {
   imageFileStatusFound: Boolean(imageFileStatus),
   imagePreviewFound: Boolean(imagePreview),
 });
+
 const featuresList = document.getElementById("featuresList");
 const featuresDataInput = document.getElementById("featuresData");
 const titleInput = document.getElementById("title");
@@ -58,40 +59,43 @@ const emailInput = document.getElementById("email");
 const showPhoneInput = document.getElementById("showPhone");
 const showEmailInput = document.getElementById("showEmail");
 const aiQuickStartSection = document.getElementById("ai-quick-start");
+
 const CATEGORY_OPTIONS = [
   "Praca dam",
   "Praca szukam",
-  "Mieszkanie wynajm\u0119",
+  "Mieszkanie wynajmę",
   "Mieszkanie szukam",
-  "Pok\u00f3j wynajm\u0119",
-  "Pok\u00f3j szukam",
-  "Us\u0142ugi oferuj\u0119",
-  "Us\u0142ugi szukam",
+  "Pokój wynajmę",
+  "Pokój szukam",
+  "Usługi oferuję",
+  "Usługi szukam",
   "Sprzedam",
-  "Kupi\u0119",
+  "Kupię",
   "Transport",
-  "Pomoc / formalno\u015bci",
+  "Pomoc / formalności",
   "Poznam ludzi",
   "Inne",
 ];
+
 const COUNTRY_CURRENCY_MAP = {
   Szwecja: "SEK",
   Norwegia: "NOK",
   Dania: "DKK",
 };
+
 const isQuickAiMode = new URLSearchParams(window.location.search).get("mode") === "ai";
 
-if (menuToggle && navLinks && navActions) {
+if (menuToggle && navLinks) {
   menuToggle.addEventListener("click", () => {
     const isOpen = navLinks.classList.toggle("open");
-    navActions.classList.toggle("open", isOpen);
+    navActions?.classList.toggle("open", isOpen);
     menuToggle.setAttribute("aria-expanded", String(isOpen));
   });
 
-  [...navLinks.querySelectorAll("a"), ...navActions.querySelectorAll("a")].forEach((link) => {
+  [...navLinks.querySelectorAll("a"), ...(navActions?.querySelectorAll("a") || [])].forEach((link) => {
     link.addEventListener("click", () => {
       navLinks.classList.remove("open");
-      navActions.classList.remove("open");
+      navActions?.classList.remove("open");
       menuToggle.setAttribute("aria-expanded", "false");
     });
   });
@@ -115,6 +119,24 @@ function setStatus(element, message, type = "") {
 
   element.textContent = message;
   element.className = `form-status${type ? ` ${type}` : ""}`;
+}
+
+function setStatusHtml(element, html, type = "") {
+  if (!element) {
+    return;
+  }
+
+  element.innerHTML = html;
+  element.className = `form-status${type ? ` ${type}` : ""}`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 async function readErrorResponse(response) {
@@ -183,7 +205,13 @@ async function fetchWithApiFallback(path, options = {}) {
 }
 
 function normalizeSpaces(value) {
-  return value.trim().replace(/\s+/g, " ");
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function parsePriceValue(value) {
+  const normalizedValue = normalizeSpaces(value).replace(/\s+/g, "").replace(",", ".");
+  const price = Number(normalizedValue);
+  return Number.isFinite(price) ? price : "";
 }
 
 function normalizeDescription(value) {
@@ -225,23 +253,23 @@ function normalizeCategory(value) {
   }
 
   if (normalizedValue.includes("mieszkan")) {
-    return "Mieszkanie wynajm\u0119";
+    return "Mieszkanie wynajmę";
   }
 
   if (normalizedValue.includes("pokoj") && normalizedValue.includes("szuk")) {
-    return "Pok\u00f3j szukam";
+    return "Pokój szukam";
   }
 
   if (normalizedValue.includes("pokoj")) {
-    return "Pok\u00f3j wynajm\u0119";
+    return "Pokój wynajmę";
   }
 
   if (normalizedValue.includes("uslug") && normalizedValue.includes("szuk")) {
-    return "Us\u0142ugi szukam";
+    return "Usługi szukam";
   }
 
   if (normalizedValue.includes("uslug") || normalizedValue.includes("remont") || normalizedValue.includes("formal")) {
-    return normalizedValue.includes("formal") ? "Pomoc / formalno\u015bci" : "Us\u0142ugi oferuj\u0119";
+    return normalizedValue.includes("formal") ? "Pomoc / formalności" : "Usługi oferuję";
   }
 
   if (normalizedValue.includes("sprzed")) {
@@ -249,7 +277,7 @@ function normalizeCategory(value) {
   }
 
   if (normalizedValue.includes("kupi")) {
-    return "Kupi\u0119";
+    return "Kupię";
   }
 
   if (normalizedValue.includes("transport") || normalizedValue.includes("przewoz") || normalizedValue.includes("bus")) {
@@ -257,7 +285,7 @@ function normalizeCategory(value) {
   }
 
   if (normalizedValue.includes("pomoc") || normalizedValue.includes("formal")) {
-    return "Pomoc / formalno\u015bci";
+    return "Pomoc / formalności";
   }
 
   if (normalizedValue.includes("poznam") || normalizedValue.includes("ludzi") || normalizedValue.includes("spolecz")) {
@@ -498,7 +526,7 @@ async function generateListingFromImage() {
   setFieldState("image", true);
   setStatus(aiStatus, "Analizuję zdjęcie i przygotowuję propozycję treści...", "");
   generateFromImageButton.disabled = true;
-  generateFromImageButton.textContent = "⏳ Analizuję zdjęcie...";
+  generateFromImageButton.textContent = "Analizuję zdjęcie...";
 
   const formData = new FormData();
   formData.append("image", selectedImage);
@@ -528,27 +556,32 @@ async function generateListingFromImage() {
       ? error.message
       : "Nie udało się wygenerować opisu ze zdjęcia.";
 
-    setStatus(
-      aiStatus,
-      errorMessage,
-      "error"
-    );
+    setStatus(aiStatus, errorMessage, "error");
     console.error("AI generation error:", {
       error,
     });
   } finally {
     generateFromImageButton.disabled = false;
-    generateFromImageButton.textContent = "✨ Uzupełnij ogłoszenie z AI";
+    generateFromImageButton.textContent = "Uzupełnij ogłoszenie z AI";
   }
 }
 
 if (generateFromImageButton) {
   generateFromImageButton.addEventListener("click", generateListingFromImage);
 }
+
 async function handleImageSelection(activeInput, otherInput) {
   const selectedFile = activeInput?.files?.[0] || null;
   selectedImageFile = selectedFile;
-  console.debug("[TwojBazar WWW] handleImageSelection", { activeInputId: activeInput?.id || null, otherInputId: otherInput?.id || null, hasFile: Boolean(selectedFile), fileName: selectedFile?.name || null, fileSize: selectedFile?.size || 0, fileType: selectedFile?.type || null });
+
+  console.debug("[TwojBazar WWW] handleImageSelection", {
+    activeInputId: activeInput?.id || null,
+    otherInputId: otherInput?.id || null,
+    hasFile: Boolean(selectedFile),
+    fileName: selectedFile?.name || null,
+    fileSize: selectedFile?.size || 0,
+    fileType: selectedFile?.type || null,
+  });
 
   if (otherInput) {
     otherInput.value = "";
@@ -576,14 +609,20 @@ if (imageGalleryTrigger && imageGalleryInput) {
 
 if (imageInput) {
   imageInput.addEventListener("change", async () => {
-    console.debug("[TwojBazar WWW] camera input change", { hasFile: Boolean(imageInput.files?.[0]), fileName: imageInput.files?.[0]?.name || null });
+    console.debug("[TwojBazar WWW] camera input change", {
+      hasFile: Boolean(imageInput.files?.[0]),
+      fileName: imageInput.files?.[0]?.name || null,
+    });
     await handleImageSelection(imageInput, imageGalleryInput);
   });
 }
 
 if (imageGalleryInput) {
   imageGalleryInput.addEventListener("change", async () => {
-    console.debug("[TwojBazar WWW] gallery input change", { hasFile: Boolean(imageGalleryInput.files?.[0]), fileName: imageGalleryInput.files?.[0]?.name || null });
+    console.debug("[TwojBazar WWW] gallery input change", {
+      hasFile: Boolean(imageGalleryInput.files?.[0]),
+      fileName: imageGalleryInput.files?.[0]?.name || null,
+    });
     await handleImageSelection(imageGalleryInput, imageInput);
   });
 }
@@ -629,7 +668,7 @@ if (form) {
     if (!isFormValid || !hasContactMethod) {
       setFieldState("phone", Boolean(hasContactMethod));
       setFieldState("email", Boolean(hasContactMethod));
-      setStatus(formStatus, "Uzupelnij poprawnie wymagane pola i podaj telefon albo e-mail.", "error");
+      setStatus(formStatus, "Uzupełnij poprawnie wymagane pola i podaj telefon albo e-mail.", "error");
       return;
     }
 
@@ -641,10 +680,11 @@ if (form) {
         fileSize: selectedImage?.size || 0,
         fileType: selectedImage?.type || null,
       });
+
       const listing = {
         title: normalizeSpaces(titleInput?.value || ""),
         category: normalizeCategory(categorySelect?.value || ""),
-        price: String(priceInput?.value || ""),
+        price: parsePriceValue(priceInput?.value || ""),
         country: countrySelect?.value || "",
         currency: getCurrencyForCountry(countrySelect?.value),
         city: normalizeSpaces(cityInput?.value || ""),
@@ -673,10 +713,27 @@ if (form) {
       }
 
       const createdListing = await createListing(listing, selectedImage);
-      setStatus(formStatus, "Ogłoszenie zostało zapisane. Otwieram prywatny link do zarządzania...", "success");
+      const publicUrl = createdListing?.publicUrl || "";
+      const managementUrl = createdListing?.managementUrl || createdListing?.manageUrl || "";
+      const emailStatus = createdListing?.emailDeliveryStatus?.status || "unknown";
 
-      if (createdListing?.managementUrl) {
-        window.location.href = createdListing.managementUrl;
+      if (emailStatus === "sent" && publicUrl) {
+        setStatus(formStatus, "Ogłoszenie zostało zapisane. Mail z linkami został wysłany.", "success");
+        window.location.href = publicUrl;
+        return;
+      }
+
+      if (publicUrl && managementUrl) {
+        setStatusHtml(
+          formStatus,
+          `Ogłoszenie zostało zapisane, ale mail nie został potwierdzony. Zachowaj linki poniżej:<br><a href="${escapeHtml(publicUrl)}">Zobacz ogłoszenie</a><br><a href="${escapeHtml(managementUrl)}">Zarządzaj ogłoszeniem</a>`,
+          "success"
+        );
+        return;
+      }
+
+      if (publicUrl) {
+        window.location.href = publicUrl;
         return;
       }
 
@@ -701,16 +758,3 @@ if (isQuickAiMode && aiQuickStartSection) {
     setStatus(aiStatus, "Dodaj zdjęcie lub zrób zdjęcie aparatem, a AI wypełni kategorię, tytuł, opis i najważniejsze cechy.", "");
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -4,7 +4,8 @@ import multer from "multer";
 import OpenAI from "openai";
 import { mkdirSync, promises as fs } from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
+import nodemailer from "nodemailer";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,6 +19,7 @@ const listingsTempFilePath = path.join(__dirname, "listings.json.tmp");
 const uploadsDirPath = path.join(__dirname, "uploads");
 let listings = [];
 let listingsWriteQueue = Promise.resolve();
+const managementTokenTtlDays = Math.max(1, Number(process.env.MANAGEMENT_TOKEN_TTL_DAYS || 365));
 const ALLOWED_CATEGORIES = [
   "Praca dam",
   "Praca szukam",
@@ -35,6 +37,11 @@ const ALLOWED_CATEGORIES = [
   "Inne",
 ];
 const ALLOWED_COUNTRIES = ["Szwecja", "Norwegia", "Dania"];
+const COUNTRY_CURRENCY_MAP = {
+  Szwecja: "SEK",
+  Norwegia: "NOK",
+  Dania: "DKK",
+};
 
 const allowedOrigins = new Set([
   "https://twojbazar.com",
@@ -52,6 +59,34 @@ const openai = process.env.OPENAI_API_KEY
       apiKey: process.env.OPENAI_API_KEY,
     })
   : null;
+
+function createMailerTransporter() {
+  const host = normalizeString(process.env.SMTP_HOST);
+  const port = Number(process.env.SMTP_PORT || 0);
+  const user = normalizeString(process.env.SMTP_USER);
+  const pass = normalizeString(process.env.SMTP_PASS);
+  const secure = String(process.env.SMTP_SECURE || "false").toLowerCase() === "true";
+
+  if (!host || !port || !user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user,
+      pass,
+    },
+  });
+}
+
+const mailerTransporter = createMailerTransporter();
+const managementEmailFrom =
+  normalizeString(process.env.SMTP_FROM) ||
+  normalizeString(process.env.MANAGEMENT_EMAIL_FROM) ||
+  normalizeString(process.env.SMTP_USER);
 
 const uploadLimits = {
   fileSize: 10 * 1024 * 1024,
@@ -194,6 +229,10 @@ function normalizeCountry(value) {
   return directMatch || "";
 }
 
+function getCurrencyForCountry(country) {
+  return COUNTRY_CURRENCY_MAP[country] || "";
+}
+
 function normalizePriceValue(value, { strict = false } = {}) {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -247,12 +286,41 @@ function normalizeStatus(value) {
   return "active";
 }
 
+function generateManagementToken() {
+  return randomBytes(32).toString("hex");
+}
+
+function getManagementTokenExpiresAt(createdAtIso) {
+  const createdAt = new Date(createdAtIso);
+  createdAt.setUTCDate(createdAt.getUTCDate() + managementTokenTtlDays);
+  return createdAt.toISOString();
+}
+
+function isManagementTokenExpired(listing) {
+  const expiresAt = normalizeString(listing?.managementTokenExpiresAt);
+
+  if (!expiresAt) {
+    return false;
+  }
+
+  const expiresTime = new Date(expiresAt).getTime();
+
+  if (!Number.isFinite(expiresTime)) {
+    return true;
+  }
+
+  return Date.now() > expiresTime;
+}
+
 function normalizeListing(listing) {
   const safeListing = listing && typeof listing === "object" ? listing : {};
   const normalizedStatus = normalizeStatus(safeListing.status);
   const normalizedCountry = normalizeCountry(safeListing.country);
   const normalizedImage = sanitizeImageValue(safeListing.image);
   const normalizedCreatedAt = normalizeString(safeListing.createdAt);
+  const normalizedTokenCreatedAt = normalizeString(safeListing.managementTokenCreatedAt);
+  const normalizedTokenExpiresAt = normalizeString(safeListing.managementTokenExpiresAt);
+  const normalizedToken = normalizeString(safeListing.managementToken);
 
   return {
     ...safeListing,
@@ -260,7 +328,7 @@ function normalizeListing(listing) {
     title: normalizeString(safeListing.title),
     category: normalizeCategory(safeListing.category),
     price: normalizePriceValue(safeListing.price),
-    currency: normalizeString(safeListing.currency),
+    currency: normalizeString(safeListing.currency) || getCurrencyForCountry(normalizedCountry),
     country: normalizedCountry,
     city: normalizeString(safeListing.city),
     description: normalizeString(safeListing.description),
@@ -273,7 +341,9 @@ function normalizeListing(listing) {
     images: Array.isArray(safeListing.images) ? safeListing.images.map(sanitizeImageValue).filter(Boolean) : normalizedImage ? [normalizedImage] : [],
     createdAt: normalizedCreatedAt,
     status: normalizedStatus,
-    managementToken: normalizeString(safeListing.managementToken),
+    managementToken: normalizedToken,
+    managementTokenCreatedAt: normalizedTokenCreatedAt,
+    managementTokenExpiresAt: normalizedTokenExpiresAt,
   };
 }
 
@@ -321,6 +391,47 @@ function serializeManagedListing(req, listing) {
     manageUrl: getManagementUrl(req, listing.managementToken),
     managementUrl: getManagementUrl(req, listing.managementToken),
     managementToken: listing.managementToken,
+    managementTokenCreatedAt: listing.managementTokenCreatedAt,
+    managementTokenExpiresAt: listing.managementTokenExpiresAt,
+  };
+}
+
+async function sendManagementLinkEmail({ to, publicUrl, managementUrl, listingTitle, tokenExpiresAt }) {
+  if (!to || !mailerTransporter || !managementEmailFrom) {
+    return {
+      status: "skipped",
+      reason: "missing_mail_config",
+    };
+  }
+
+  const subject = "Link do edycji Twojego ogłoszenia";
+  const expiryInfo = tokenExpiresAt
+    ? `Link ważny do: ${new Date(tokenExpiresAt).toLocaleString("pl-PL", { timeZone: "UTC" })} UTC.`
+    : "Link nie ma ustawionej daty wygaśnięcia.";
+  const text = [
+    "Dziękujemy za dodanie ogłoszenia w TwojBazar.",
+    "",
+    "Publiczny link do ogłoszenia:",
+    publicUrl || "(brak linku publicznego)",
+    "",
+    "To jest Twój prywatny link do zarządzania ogłoszeniem:",
+    managementUrl,
+    "",
+    `Tytuł ogłoszenia: ${listingTitle || "(bez tytułu)"}`,
+    expiryInfo,
+    "",
+    "Zachowaj ten link - tylko on umożliwia edycję, wstrzymanie lub usunięcie ogłoszenia.",
+  ].join("\n");
+
+  await mailerTransporter.sendMail({
+    from: managementEmailFrom,
+    to,
+    subject,
+    text,
+  });
+
+  return {
+    status: "sent",
   };
 }
 
@@ -340,8 +451,10 @@ function validateListingPayload(payload, options = {}) {
     errors.push("Kategoria jest wymagana.");
   }
 
-  if (!normalizedListing.price) {
+  if (normalizedListing.price === "" || normalizedListing.price === null) {
     errors.push("Cena jest wymagana.");
+  } else if (typeof normalizedListing.price !== "number" || !Number.isFinite(normalizedListing.price)) {
+    errors.push("Cena musi być liczbą.");
   }
 
   if (!normalizedListing.country || !ALLOWED_COUNTRIES.includes(normalizedListing.country)) {
@@ -444,8 +557,16 @@ async function saveListings() {
   const snapshot = JSON.stringify(listings.map(normalizeListing), null, 2);
 
   listingsWriteQueue = listingsWriteQueue.catch(() => undefined).then(async () => {
-    await fs.writeFile(listingsTempFilePath, `${snapshot}\n`, "utf8");
-    await fs.rename(listingsTempFilePath, listingsFilePath);
+    try {
+      await fs.writeFile(listingsTempFilePath, `${snapshot}\n`, "utf8");
+      await fs.rename(listingsTempFilePath, listingsFilePath);
+    } catch (error) {
+      console.warn("[Listings] Atomic save failed, falling back to direct write", {
+        message: error?.message,
+      });
+
+      await fs.writeFile(listingsFilePath, `${snapshot}\n`, "utf8");
+    }
   });
 
   return listingsWriteQueue;
@@ -547,16 +668,46 @@ app.post("/api/listings", listingUpload, async (req, res) => {
     }
 
     const createdAt = new Date().toISOString();
+    const managementToken = generateManagementToken();
+    const managementTokenCreatedAt = createdAt;
+    const managementTokenExpiresAt = getManagementTokenExpiresAt(createdAt);
     const listing = {
       ...normalizedPayload,
       id: randomUUID(),
       createdAt,
-      managementToken: randomUUID(),
+      managementToken,
+      managementTokenCreatedAt,
+      managementTokenExpiresAt,
       status: "active",
     };
 
     listings.unshift(listing);
     await saveListings();
+
+    const managementUrl = getManagementUrl(req, listing.managementToken);
+    let emailDeliveryStatus = { status: "not_requested" };
+
+    if (listing.email) {
+      try {
+        emailDeliveryStatus = await sendManagementLinkEmail({
+          to: listing.email,
+          publicUrl: getPublicListingUrl(req, listing.id),
+          managementUrl,
+          listingTitle: listing.title,
+          tokenExpiresAt: listing.managementTokenExpiresAt,
+        });
+      } catch (emailError) {
+        console.error("[Listings] Failed to send management email", {
+          listingId: listing.id,
+          message: emailError?.message,
+        });
+
+        emailDeliveryStatus = {
+          status: "failed",
+          reason: "send_error",
+        };
+      }
+    }
 
     console.log("[Listings] Created listing", {
       id: listing.id,
@@ -564,9 +715,13 @@ app.post("/api/listings", listingUpload, async (req, res) => {
       category: listing.category,
       country: listing.country,
       city: listing.city,
+      emailDeliveryStatus: emailDeliveryStatus.status,
     });
 
-    return res.status(201).json(serializeManagedListing(req, listing));
+    return res.status(201).json({
+      ...serializeManagedListing(req, listing),
+      emailDeliveryStatus,
+    });
   } catch (error) {
     console.error("[Listings] Failed to create listing", {
       message: error?.message,
@@ -589,10 +744,16 @@ app.get("/api/manage/:token", (req, res) => {
     });
   }
 
+  if (isManagementTokenExpired(listing)) {
+    return res.status(410).json({
+      error: "Link do zarządzania ogłoszeniem wygasł.",
+    });
+  }
+
   return res.json(serializeManagedListing(req, listing));
 });
 
-app.put("/api/manage/:token", async (req, res) => {
+app.put("/api/manage/:token", listingUpload, async (req, res) => {
   try {
     const token = normalizeString(req.params.token);
     const listingIndex = findListingIndexByManagementToken(token);
@@ -603,8 +764,37 @@ app.put("/api/manage/:token", async (req, res) => {
       });
     }
 
+    if (isManagementTokenExpired(listings[listingIndex])) {
+      return res.status(410).json({
+        error: "Link do edycji ogłoszenia wygasł.",
+      });
+    }
+
     const existingListing = listings[listingIndex];
-    const { listing: normalizedPayload, errors } = validateListingPayload(req.body, {
+    const payload = req.body && typeof req.body === "object" ? { ...req.body } : {};
+    const uploadedImages = [
+      ...((req.files?.image || []).map((file) => `/uploads/${file.filename}`)),
+      ...((req.files?.images || []).map((file) => `/uploads/${file.filename}`)),
+    ];
+    const shouldClearImages = normalizeBoolean(payload.clearImage);
+
+    if (uploadedImages.length) {
+      payload.image = uploadedImages[0];
+      payload.images = uploadedImages;
+    } else if (shouldClearImages) {
+      payload.image = "";
+      payload.images = [];
+    } else {
+      payload.image = existingListing.image;
+      payload.images = existingListing.images;
+    }
+
+    delete payload.clearImage;
+
+    const { listing: normalizedPayload, errors } = validateListingPayload({
+      ...existingListing,
+      ...payload,
+    }, {
       existingId: existingListing.id,
     });
 
@@ -651,7 +841,23 @@ app.patch("/api/manage/:token/status", async (req, res) => {
       });
     }
 
-    const nextStatus = normalizeStatus(req.body?.status);
+    if (isManagementTokenExpired(listings[listingIndex])) {
+      return res.status(410).json({
+        error: "Link do zarządzania ogłoszeniem wygasł.",
+      });
+    }
+
+    const requestedStatus = normalizeString(req.body?.status);
+    const allowedStatuses = ["active", "inactive", "deleted"];
+
+    if (!allowedStatuses.includes(requestedStatus)) {
+      return res.status(400).json({
+        error: "Nieprawidłowy status ogłoszenia.",
+        details: ["Dozwolone statusy: active, inactive, deleted."],
+      });
+    }
+
+    const nextStatus = requestedStatus;
     listings[listingIndex] = {
       ...listings[listingIndex],
       status: nextStatus,
@@ -683,6 +889,12 @@ app.delete("/api/manage/:token", async (req, res) => {
       });
     }
 
+    if (isManagementTokenExpired(listings[listingIndex])) {
+      return res.status(410).json({
+        error: "Link do zarządzania ogłoszeniem wygasł.",
+      });
+    }
+
     listings[listingIndex] = {
       ...listings[listingIndex],
       status: "deleted",
@@ -707,8 +919,8 @@ async function handleGenerateDescription(req, res) {
     if (!openai) {
       console.error("[AI] Missing OPENAI_API_KEY");
 
-      return res.status(500).json({
-        error: "Server is missing OPENAI_API_KEY.",
+      return res.status(503).json({
+        error: "Funkcja AI jest chwilowo niedostępna (brak konfiguracji OPENAI_API_KEY).",
       });
     }
 
@@ -827,8 +1039,11 @@ async function handleModerateListing(req, res) {
     if (!openai) {
       console.error("[Moderation] Missing OPENAI_API_KEY");
 
-      return res.status(500).json({
-        error: "Server is missing OPENAI_API_KEY.",
+      return res.json({
+        label: "allowed",
+        allowed: true,
+        skipped: true,
+        reason: "missing_openai_api_key",
       });
     }
 

@@ -8,6 +8,7 @@
   <meta name="theme-color" content="#0f766e">
   <meta name="description" content="Ogłoszenia dla Polaków w Szwecji, Norwegii i Danii. TwojBazar łączy pracę, mieszkania, pokoje, usługi i transport dla Polonii w Skandynawii.">
   <title>Ogłoszenia dla Polaków w Szwecji, Norwegii i Danii | Polonia w Skandynawii | TwojBazar</title>
+  <script src="mobile-redirect.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -133,8 +134,8 @@
           <article class="category-card" id="mieszkania" data-filter-target="mieszkanie wynajm?">
             <div class="category-icon">02</div>
             <h3>Mieszkania</h3>
-            <p>Pokoje, mieszkania i ogłoszenia od osób, które szukają stabilnego lokum w nowym kraju.</p>
-            <span class="category-meta">Mieszkanie szukam, Pokój wynajmę, Pokój szukam</span>
+            <p>Mieszkania i ogłoszenia od osób, które szukają stabilnego lokum w nowym kraju.</p>
+            <span class="category-meta">Mieszkanie wynajmę, Mieszkanie szukam</span>
           </article>
           <article class="category-card" id="uslugi" data-filter-target="usługi oferuję">
             <div class="category-icon">03</div>
@@ -178,8 +179,6 @@
             <button class="filter-chip active" type="button" data-filter="all">Wszystkie</button>
             <button class="filter-chip" type="button" data-filter="praca dam">Praca</button>
             <button class="filter-chip" type="button" data-filter="praca szukam">Praca szukam</button>
-            <button class="filter-chip" type="button" data-filter="pokój wynajmę">Pokój wynajmę</button>
-            <button class="filter-chip" type="button" data-filter="pokój szukam">Pokój szukam</button>
             <button class="filter-chip" type="button" data-filter="mieszkanie wynajm?">Mieszkania</button>
             <button class="filter-chip" type="button" data-filter="mieszkanie szukam">Mieszkanie szukam</button>
             <button class="filter-chip" type="button" data-filter="usługi oferuję">Usługi</button>
@@ -197,16 +196,14 @@
           <p class="filter-group-label" data-i18n="filters.countryLabel">Kraj</p>
           <label class="sr-only" for="countrySelect" data-i18n="filters.countrySelectLabel">Wybierz kraj</label>
           <select class="country-select" id="countrySelect">
-            <option value="all" data-i18n="filters.allCountries">Wszystkie kraje</option>
-            <option value="szwecja">Szwecja</option>
+            <option value="szwecja" selected>Szwecja</option>
             <option value="norwegia">Norwegia</option>
             <option value="dania">Dania</option>
           </select>
           <div class="listing-filters country-filters" aria-label="Filtrowanie ogłoszeń po kraju">
-            <button class="filter-chip active" type="button" data-country-filter="all" data-i18n="filters.allCountries">Wszystkie kraje</button>
-            <button class="filter-chip" type="button" data-country-filter="szwecja" data-i18n="filters.sweden">? Szwecja</button>
-            <button class="filter-chip" type="button" data-country-filter="norwegia" data-i18n="filters.norway">? Norwegia</button>
-            <button class="filter-chip" type="button" data-country-filter="dania" data-i18n="filters.denmark">? Dania</button>
+            <button class="filter-chip active" type="button" data-country-filter="szwecja" data-i18n="filters.sweden">Szwecja</button>
+            <button class="filter-chip" type="button" data-country-filter="norwegia" data-i18n="filters.norway">Norwegia</button>
+            <button class="filter-chip" type="button" data-country-filter="dania" data-i18n="filters.denmark">Dania</button>
           </div>
           <p class="filter-group-label">Kolejne kraje wkrótce</p>
         </div>

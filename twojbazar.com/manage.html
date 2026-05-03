@@ -1,18 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0f766e">
-  <meta name="description" content="Zarządzaj ogłoszeniem w TwojBazar.">
-  <title>Zarządzaj ogłoszeniem | TwojBazar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Zarządzaj ogłoszeniem w Twoj Bazar.">
+  <title>Zarządzaj ogłoszeniem | Twoj Bazar</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="page-shell">
-    <header class="navbar">
+    <header class="navbar" id="siteHeader">
       <a href="index.html#start" class="logo">
         <span class="logo-mark">TB</span>
         <span class="logo-text">TwojBazar</span>
@@ -23,7 +20,6 @@
         <span></span>
         <span></span>
       </button>
-      <div class="nav-center">
 
       <nav class="nav-links" id="site-navigation">
         <a href="index.html#start">Start</a>
@@ -31,14 +27,10 @@
         <a href="pomoc.html">Pomoc</a>
         <a href="index.html#kontakt">Kontakt</a>
       </nav>
-      </div>
-
-      <div class="navbar-cta">
-        <a href="add-listing.html" class="nav-cta">Dodaj ogłoszenie</a>
-      </div>
 
       <div class="nav-actions">
         <a href="index.html#ogloszenia" class="nav-link-secondary">Przeglądaj</a>
+        <a href="add-listing.html" class="button button-primary button-nav">Dodaj ogłoszenie</a>
       </div>
     </header>
 
@@ -50,27 +42,27 @@
           <p class="page-intro" id="manageIntro">Ładowanie danych ogłoszenia...</p>
 
           <form class="listing-form" id="manageListingForm" novalidate>
-            <div class="form-field" data-field="title">
+            <div class="form-field">
               <label for="manageTitle">Tytuł</label>
-              <input id="manageTitle" name="title" type="text">
+              <input id="manageTitle" type="text">
             </div>
 
             <div class="form-row">
-              <div class="form-field" data-field="category">
+              <div class="form-field">
                 <label for="manageCategory">Kategoria</label>
-                <select id="manageCategory" name="category"></select>
+                <select id="manageCategory"></select>
               </div>
 
-              <div class="form-field" data-field="price">
+              <div class="form-field">
                 <label for="managePrice">Cena</label>
-                <input id="managePrice" name="price" type="text">
+                <input id="managePrice" type="text">
               </div>
             </div>
 
             <div class="form-row">
-              <div class="form-field" data-field="country">
+              <div class="form-field">
                 <label for="manageCountry">Kraj</label>
-                <select id="manageCountry" name="country">
+                <select id="manageCountry">
                   <option value="">Wybierz kraj</option>
                   <option value="Szwecja">Szwecja</option>
                   <option value="Norwegia">Norwegia</option>
@@ -78,15 +70,15 @@
                 </select>
               </div>
 
-              <div class="form-field" data-field="city">
+              <div class="form-field">
                 <label for="manageCity">Miasto</label>
-                <input id="manageCity" name="city" type="text">
+                <input id="manageCity" type="text">
               </div>
             </div>
 
-            <div class="form-field" data-field="description">
+            <div class="form-field">
               <label for="manageDescription">Opis</label>
-              <textarea id="manageDescription" name="description"></textarea>
+              <textarea id="manageDescription"></textarea>
             </div>
 
             <div class="form-field">
@@ -149,12 +141,14 @@
         </div>
 
         <aside class="info-panel">
-          <h2>Twój link do zarządzania</h2>
-          <p>Zachowaj ten link. Tylko przez niego można edytować, usunąć lub oznaczyć ogłoszenie jako nieaktualne.</p>
+          <h2>Twoje linki</h2>
+          <p>Zachowaj prywatny link do edycji. Publiczny link możesz wysłać dalej.</p>
           <div class="listing-details-contact">
+            <p><strong>Link publiczny</strong></p>
             <p id="publicLinkText"></p>
+            <p><strong>Link do zarządzania</strong></p>
             <p id="manageLinkText"></p>
-            <button type="button" class="button button-secondary" id="copyManageLinkButton">Kopiuj link</button>
+            <button type="button" class="button button-secondary" id="copyManageLinkButton">Kopiuj link zarządzania</button>
             <a class="button button-secondary" id="viewListingButton" href="index.html">Zobacz ogłoszenie</a>
           </div>
         </aside>
@@ -169,6 +163,3 @@
   <script src="manage-listing.js"></script>
 </body>
 </html>
-
-
-

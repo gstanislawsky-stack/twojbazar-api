@@ -1,7 +1,7 @@
 (function () {
   const DESKTOP_OVERRIDE_KEY = "twojbazar.desktopMode";
   const DESKTOP_PARAM = "desktop";
-  const APP_ENTRY = "/app/index.html#home";
+  const APP_ENTRY = "/app/index.html?v=20260422-motorola#home";
 
   const locationRef = window.location;
   const userAgent = (navigator.userAgent || "").toLowerCase();
@@ -20,17 +20,19 @@
       return true;
     }
 
-    if (/android/.test(ua) && /mobile/i.test(ua)) {
+    if (/android/.test(ua) && /mobile|moto|motorola|xt\d{3,5}|edge/i.test(ua)) {
       return true;
     }
 
     const uaDataMobile = navigator.userAgentData && navigator.userAgentData.mobile === true;
     const coarsePointer = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    const touchDevice = navigator.maxTouchPoints > 0 || coarsePointer;
+    const viewportWidth = Math.min(window.innerWidth || 0, window.screen.width || 0) || window.innerWidth || 0;
     const smallScreen = Math.min(window.screen.width || 0, window.screen.height || 0) > 0
-      ? Math.min(window.screen.width, window.screen.height) <= 430
+      ? Math.min(window.screen.width, window.screen.height) <= 820
       : false;
 
-    return Boolean(uaDataMobile && coarsePointer && smallScreen);
+    return Boolean((uaDataMobile || touchDevice) && (smallScreen || (viewportWidth > 0 && viewportWidth <= 820)));
   }
 
   function readDesktopOverride() {

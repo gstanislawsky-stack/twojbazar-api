@@ -1,9 +1,141 @@
 [
   {
+    "title": "Test MVP cleanup",
+    "category": "Inne",
+    "price": 123,
+    "country": "Szwecja",
+    "currency": "SEK",
+    "city": "Stockholm",
+    "description": "Testowe ogloszenie do weryfikacji flow MVP z lokalnego serwera.",
+    "contactName": "Tester",
+    "phone": "+46700111222",
+    "email": "test@example.com",
+    "showPhone": true,
+    "showEmail": true,
+    "id": "2a7c0ea1-de4c-42e7-b93a-50ca33c16fac",
+    "image": "",
+    "images": [],
+    "createdAt": "2026-05-03T14:44:41.474Z",
+    "status": "active",
+    "managementToken": "a01296117e0225e698390c6215e972f0446cde3b2334ad437c783798de5be55c",
+    "managementTokenCreatedAt": "2026-05-03T14:44:41.474Z",
+    "managementTokenExpiresAt": "2027-05-03T14:44:41.474Z"
+  },
+  {
+    "title": "Test Listing Updated",
+    "category": "Sprzedam",
+    "price": 650,
+    "currency": "SEK",
+    "country": "Szwecja",
+    "city": "Stockholm",
+    "description": "Updated test listing description for manage flow",
+    "contactName": "Test User",
+    "phone": "+46 700 000 111",
+    "email": "test@example.com",
+    "showPhone": true,
+    "showEmail": true,
+    "id": "2c088463-245e-46df-ad2d-fec373978fc1",
+    "image": "",
+    "images": [],
+    "createdAt": "2026-05-03T14:23:42.801Z",
+    "status": "deleted",
+    "managementToken": "9294929938c4048ff65ca5cafe76bc45702ab580d853a3032ff9db8c699f86db",
+    "managementTokenCreatedAt": "2026-05-03T14:23:42.801Z",
+    "managementTokenExpiresAt": "2027-05-03T14:23:42.801Z"
+  },
+  {
+    "currency": "SEK",
+    "city": "Stockholm",
+    "description": "Test create on 8081 endpoint",
+    "email": "tester@example.com",
+    "price": 100,
+    "showPhone": false,
+    "category": "Sprzedam",
+    "showEmail": true,
+    "title": "Port8081 Test",
+    "country": "Szwecja",
+    "contactName": "Tester",
+    "id": "5566cdad-db7b-41e0-9d6f-f32fbeed94ae",
+    "phone": "",
+    "image": "",
+    "images": [],
+    "createdAt": "2026-04-21T11:30:54.174Z",
+    "status": "active",
+    "managementToken": "796346b316cb46fc5c1ef22ec58541cf5b2998261fa42248a647fef378d60dd8",
+    "managementTokenCreatedAt": "2026-04-21T11:30:54.174Z",
+    "managementTokenExpiresAt": "2027-04-21T11:30:54.174Z"
+  },
+  {
+    "currency": "SEK",
+    "city": "Stockholm",
+    "description": "Automatyczny test status endpoint",
+    "email": "check@example.com",
+    "price": 321,
+    "showPhone": false,
+    "category": "Sprzedam",
+    "showEmail": true,
+    "title": "Check Listing Status",
+    "country": "Szwecja",
+    "contactName": "Checker",
+    "id": "abddb14d-fd53-471f-adb6-496b587a81e9",
+    "phone": "",
+    "image": "",
+    "images": [],
+    "createdAt": "2026-04-21T11:16:46.800Z",
+    "status": "inactive",
+    "managementToken": "4eec9479b1abc9d88868a1d71388d972bde4c6f49c8ac146d17c7f2d10044e9e",
+    "managementTokenCreatedAt": "2026-04-21T11:16:46.800Z",
+    "managementTokenExpiresAt": "2027-04-21T11:16:46.800Z"
+  },
+  {
+    "currency": "SEK",
+    "city": "Stockholm",
+    "description": "Automatyczny test endpointow",
+    "email": "check@example.com",
+    "price": 123,
+    "showPhone": false,
+    "category": "Sprzedam",
+    "showEmail": true,
+    "title": "Check Listing",
+    "country": "Szwecja",
+    "contactName": "Checker",
+    "id": "f3750e23-7f7a-4480-9376-e31046cc39db",
+    "phone": "",
+    "image": "",
+    "images": [],
+    "createdAt": "2026-04-21T11:15:35.482Z",
+    "status": "active",
+    "managementToken": "81cf78753763dee34b8cdba8ce3e3f1dcc078370d26fa124577f3d318414da8a",
+    "managementTokenCreatedAt": "2026-04-21T11:15:35.482Z",
+    "managementTokenExpiresAt": "2027-04-21T11:15:35.482Z"
+  },
+  {
+    "title": "Test Listing",
+    "category": "Sprzedam",
+    "price": 500,
+    "currency": "SEK",
+    "country": "Szwecja",
+    "city": "Stockholm",
+    "description": "Test product for email link feature",
+    "contactName": "Test User",
+    "phone": "+46 700 000 000",
+    "email": "test@example.com",
+    "showPhone": true,
+    "showEmail": true,
+    "id": "2f466a46-7c4b-486c-8ba4-5cf8cf1a2039",
+    "image": "",
+    "images": [],
+    "createdAt": "2026-04-20T17:59:06.430Z",
+    "status": "active",
+    "managementToken": "d63bbcf01e81704ec0f804afcb4262371436dcdd2d1339a18c78410f06bd69bb",
+    "managementTokenCreatedAt": "2026-04-20T17:59:06.430Z",
+    "managementTokenExpiresAt": "2027-04-20T17:59:06.430Z"
+  },
+  {
     "id": "demo-1",
     "title": "Praca dam magazyn Göteborg",
     "category": "Praca dam",
-    "price": "145",
+    "price": 145,
     "currency": "SEK",
     "country": "Szwecja",
     "city": "Göteborg",
@@ -13,7 +145,13 @@
     "email": "anna@twojbazar.com",
     "showPhone": true,
     "showEmail": true,
-    "createdAt": "2026-04-14T08:00:00.000Z"
+    "createdAt": "2026-04-14T08:00:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-2",
@@ -29,13 +167,19 @@
     "email": "marta@twojbazar.com",
     "showPhone": true,
     "showEmail": true,
-    "createdAt": "2026-04-13T18:30:00.000Z"
+    "createdAt": "2026-04-13T18:30:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-3",
     "title": "Pokój wynajmę Sztokholm",
     "category": "Pokój wynajmę",
-    "price": "5 200",
+    "price": 5200,
     "currency": "SEK",
     "country": "Szwecja",
     "city": "Sztokholm",
@@ -45,7 +189,13 @@
     "email": "kasia@twojbazar.com",
     "showPhone": true,
     "showEmail": true,
-    "createdAt": "2026-04-13T09:20:00.000Z"
+    "createdAt": "2026-04-13T09:20:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-4",
@@ -61,13 +211,19 @@
     "email": "pawel@twojbazar.com",
     "showPhone": true,
     "showEmail": false,
-    "createdAt": "2026-04-14T06:15:00.000Z"
+    "createdAt": "2026-04-14T06:15:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-5",
     "title": "Mieszkanie wynajmę Malmö",
     "category": "Mieszkanie wynajmę",
-    "price": "9 800",
+    "price": 9800,
     "currency": "SEK",
     "country": "Szwecja",
     "city": "Malmö",
@@ -77,7 +233,13 @@
     "email": "robert@twojbazar.com",
     "showPhone": true,
     "showEmail": true,
-    "createdAt": "2026-04-12T14:00:00.000Z"
+    "createdAt": "2026-04-12T14:00:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-6",
@@ -93,7 +255,13 @@
     "email": "ola@twojbazar.com",
     "showPhone": false,
     "showEmail": true,
-    "createdAt": "2026-04-11T11:45:00.000Z"
+    "createdAt": "2026-04-11T11:45:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-7",
@@ -109,7 +277,13 @@
     "email": "michal@twojbazar.com",
     "showPhone": true,
     "showEmail": true,
-    "createdAt": "2026-04-10T08:40:00.000Z"
+    "createdAt": "2026-04-10T08:40:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-8",
@@ -125,13 +299,19 @@
     "email": "lukasz@twojbazar.com",
     "showPhone": false,
     "showEmail": true,
-    "createdAt": "2026-04-10T07:10:00.000Z"
+    "createdAt": "2026-04-10T07:10:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-9",
     "title": "Sprzedam rower Malmö",
     "category": "Sprzedam",
-    "price": "1 800",
+    "price": 1800,
     "currency": "SEK",
     "country": "Szwecja",
     "city": "Malmö",
@@ -141,7 +321,13 @@
     "email": "adam@twojbazar.com",
     "showPhone": true,
     "showEmail": false,
-    "createdAt": "2026-04-14T07:25:00.000Z"
+    "createdAt": "2026-04-14T07:25:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-10",
@@ -157,7 +343,13 @@
     "email": "magda@twojbazar.com",
     "showPhone": true,
     "showEmail": false,
-    "createdAt": "2026-04-13T13:15:00.000Z"
+    "createdAt": "2026-04-13T13:15:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-11",
@@ -173,7 +365,13 @@
     "email": "ewa@twojbazar.com",
     "showPhone": false,
     "showEmail": true,
-    "createdAt": "2026-04-12T19:20:00.000Z"
+    "createdAt": "2026-04-12T19:20:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-12",
@@ -189,7 +387,13 @@
     "email": "sebastian@twojbazar.com",
     "showPhone": true,
     "showEmail": false,
-    "createdAt": "2026-04-11T15:50:00.000Z"
+    "createdAt": "2026-04-11T15:50:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-13",
@@ -205,7 +409,13 @@
     "email": "tomek@twojbazar.com",
     "showPhone": true,
     "showEmail": true,
-    "createdAt": "2026-04-09T10:05:00.000Z"
+    "createdAt": "2026-04-09T10:05:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-14",
@@ -221,7 +431,13 @@
     "email": "justyna@twojbazar.com",
     "showPhone": true,
     "showEmail": true,
-    "createdAt": "2026-04-14T05:50:00.000Z"
+    "createdAt": "2026-04-14T05:50:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-15",
@@ -237,7 +453,13 @@
     "email": "karolina@twojbazar.com",
     "showPhone": false,
     "showEmail": true,
-    "createdAt": "2026-04-13T20:30:00.000Z"
+    "createdAt": "2026-04-13T20:30:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   },
   {
     "id": "demo-16",
@@ -253,9 +475,12 @@
     "email": "kontakt@twojbazar.com",
     "showPhone": false,
     "showEmail": true,
-    "createdAt": "2026-04-09T17:45:00.000Z"
+    "createdAt": "2026-04-09T17:45:00.000Z",
+    "image": "",
+    "images": [],
+    "status": "active",
+    "managementToken": "",
+    "managementTokenCreatedAt": "",
+    "managementTokenExpiresAt": ""
   }
 ]
-
-
-
