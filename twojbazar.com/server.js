@@ -14,9 +14,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-const listingsFilePath = path.join(__dirname, "listings.json");
-const listingsTempFilePath = path.join(__dirname, "listings.json.tmp");
-const uploadsDirPath = path.join(__dirname, "uploads");
+const dataDirPath = path.resolve(normalizeString(process.env.DATA_DIR) || __dirname);
+const uploadsDirPath = path.resolve(normalizeString(process.env.UPLOADS_DIR) || path.join(dataDirPath, "uploads"));
+const listingsFilePath = path.join(dataDirPath, "listings.json");
+const listingsTempFilePath = path.join(dataDirPath, "listings.json.tmp");
+const bundledListingsFilePath = path.join(__dirname, "listings.json");
 let listings = [];
 let listingsWriteQueue = Promise.resolve();
 const managementTokenTtlDays = Math.max(1, Number(process.env.MANAGEMENT_TOKEN_TTL_DAYS || 365));
@@ -83,10 +85,23 @@ function createMailerTransporter() {
 }
 
 const mailerTransporter = createMailerTransporter();
+const publicSiteUrl = normalizeString(process.env.PUBLIC_SITE_URL).replace(/\/+$/, "");
 const managementEmailFrom =
   normalizeString(process.env.SMTP_FROM) ||
   normalizeString(process.env.MANAGEMENT_EMAIL_FROM) ||
   normalizeString(process.env.SMTP_USER);
+
+if (!mailerTransporter || !managementEmailFrom) {
+  console.warn("[Mail] SMTP is not fully configured. Management emails will be skipped.");
+} else {
+  console.log("[Mail] SMTP configured", {
+    host: normalizeString(process.env.SMTP_HOST),
+    port: Number(process.env.SMTP_PORT || 0),
+    secure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
+    from: managementEmailFrom,
+    publicSiteUrl: publicSiteUrl || "(derived from request)",
+  });
+}
 
 const uploadLimits = {
   fileSize: 10 * 1024 * 1024,
@@ -367,6 +382,10 @@ function serializePublicListing(req, listing) {
 }
 
 function getBaseUrl(req) {
+  if (publicSiteUrl) {
+    return publicSiteUrl;
+  }
+
   const origin = normalizeString(req.headers.origin);
 
   if (origin) {
@@ -398,41 +417,88 @@ function serializeManagedListing(req, listing) {
 
 async function sendManagementLinkEmail({ to, publicUrl, managementUrl, listingTitle, tokenExpiresAt }) {
   if (!to || !mailerTransporter || !managementEmailFrom) {
+    console.warn("[Mail] Skipping management email", {
+      hasRecipient: Boolean(to),
+      hasTransporter: Boolean(mailerTransporter),
+      hasFrom: Boolean(managementEmailFrom),
+    });
+
     return {
       status: "skipped",
       reason: "missing_mail_config",
     };
   }
 
-  const subject = "Link do edycji Twojego ogłoszenia";
+  const subject = "Twoj Bazar – link do zarządzania ogłoszeniem";
   const expiryInfo = tokenExpiresAt
     ? `Link ważny do: ${new Date(tokenExpiresAt).toLocaleString("pl-PL", { timeZone: "UTC" })} UTC.`
     : "Link nie ma ustawionej daty wygaśnięcia.";
+  const safeTitle = listingTitle || "(bez tytułu)";
   const text = [
-    "Dziękujemy za dodanie ogłoszenia w TwojBazar.",
+    "Dziękujemy za dodanie ogłoszenia w Twoj Bazar.",
+    "Zachowaj tego maila, ponieważ zawiera link do ogłoszenia i prywatny link do zarządzania.",
     "",
-    "Publiczny link do ogłoszenia:",
+    `Tytuł ogłoszenia: ${safeTitle}`,
+    "",
+    "Link do ogłoszenia:",
     publicUrl || "(brak linku publicznego)",
     "",
-    "To jest Twój prywatny link do zarządzania ogłoszeniem:",
+    "Link do zarządzania ogłoszeniem:",
     managementUrl,
     "",
-    `Tytuł ogłoszenia: ${listingTitle || "(bez tytułu)"}`,
     expiryInfo,
-    "",
-    "Zachowaj ten link - tylko on umożliwia edycję, wstrzymanie lub usunięcie ogłoszenia.",
   ].join("\n");
+  const html = `
+    <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6;">
+      <h2 style="margin: 0 0 16px; color: #111827;">Twoj Bazar</h2>
+      <p>Dziękujemy za dodanie ogłoszenia w Twoj Bazar.</p>
+      <p>Zachowaj tego maila, ponieważ zawiera link do ogłoszenia i prywatny link do zarządzania.</p>
+      <p><strong>Tytuł ogłoszenia:</strong> ${escapeHtml(safeTitle)}</p>
+      <p><strong>Link do ogłoszenia:</strong><br><a href="${escapeHtml(publicUrl || managementUrl)}">${escapeHtml(publicUrl || "(brak linku publicznego)")}</a></p>
+      <p><strong>Link do zarządzania ogłoszeniem:</strong><br><a href="${escapeHtml(managementUrl)}">${escapeHtml(managementUrl)}</a></p>
+      <p>${escapeHtml(expiryInfo)}</p>
+    </div>
+  `.trim();
 
-  await mailerTransporter.sendMail({
+  console.log("[Mail] Starting management email send", {
+    to,
+    publicUrl: publicUrl || "(missing)",
+    managementUrl,
+    listingTitle: safeTitle,
+  });
+
+  const smtpResponse = await mailerTransporter.sendMail({
     from: managementEmailFrom,
     to,
     subject,
     text,
+    html,
+  });
+
+  console.log("[Mail] SMTP send success", {
+    to,
+    messageId: smtpResponse?.messageId || null,
+    accepted: smtpResponse?.accepted || [],
+    rejected: smtpResponse?.rejected || [],
+    response: smtpResponse?.response || null,
   });
 
   return {
     status: "sent",
+    messageId: smtpResponse?.messageId || null,
+    accepted: smtpResponse?.accepted || [],
+    rejected: smtpResponse?.rejected || [],
+    response: smtpResponse?.response || null,
   };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function findListingIndexByManagementToken(token) {
@@ -496,6 +562,7 @@ function validateListingPayload(payload, options = {}) {
 }
 
 async function ensureListingsFileExists() {
+  await fs.mkdir(dataDirPath, { recursive: true });
   await fs.mkdir(uploadsDirPath, { recursive: true });
 
   try {
@@ -505,7 +572,8 @@ async function ensureListingsFileExists() {
       throw error;
     }
 
-    await fs.writeFile(listingsFilePath, "[]\n", "utf8");
+    const seedListings = await fs.readFile(bundledListingsFilePath, "utf8").catch(() => "");
+    await fs.writeFile(listingsFilePath, seedListings.trim() ? seedListings : "[]\n", "utf8");
   }
 }
 
@@ -537,7 +605,7 @@ async function loadListings() {
     listings = [];
 
     try {
-      const backupPath = path.join(__dirname, `listings.corrupt.${Date.now()}.json`);
+      const backupPath = path.join(dataDirPath, `listings.corrupt.${Date.now()}.json`);
       const existingRaw = await fs.readFile(listingsFilePath, "utf8").catch(() => "");
 
       if (existingRaw) {
@@ -573,6 +641,13 @@ async function saveListings() {
 }
 
 await loadListings();
+
+console.log("[Storage] Listings and uploads configured", {
+  dataDirPath,
+  listingsFilePath,
+  uploadsDirPath,
+  listingsCount: listings.length,
+});
 
 app.use((_req, res, next) => {
   res.charset = "utf-8";
@@ -625,6 +700,18 @@ app.get("/", (_req, res) => {
   res.type("text/plain").send("API działa");
 });
 
+app.get("/api/health", (_req, res) => {
+  res.json({
+    status: "ok",
+    listingsCount: listings.length,
+    uploadsEnabled: true,
+    storage: {
+      dataDirConfigured: Boolean(normalizeString(process.env.DATA_DIR)),
+      uploadsDirConfigured: Boolean(normalizeString(process.env.UPLOADS_DIR)),
+    },
+  });
+});
+
 app.get("/api/listings", (_req, res) => {
   return res.json(
     listings
@@ -643,6 +730,94 @@ app.get("/api/listings/:id", (req, res) => {
   }
 
   return res.json(serializePublicListing(req, listing));
+});
+
+app.get("/api/test-email", async (req, res) => {
+  const to = normalizeString(req.query?.to);
+
+  if (!to) {
+    return res.status(400).json({
+      error: "Podaj adres email w parametrze ?to=",
+    });
+  }
+
+  if (!mailerTransporter || !managementEmailFrom) {
+    return res.status(500).json({
+      error: "SMTP nie jest skonfigurowane.",
+      hasTransporter: Boolean(mailerTransporter),
+      hasFrom: Boolean(managementEmailFrom),
+    });
+  }
+
+  const baseUrl = getBaseUrl(req);
+  const publicUrl = `${baseUrl}/listing.html?id=test-ogloszenie`;
+  const managementUrl = `${baseUrl}/manage.html?token=test-token`;
+
+  try {
+    console.log("[Mail] Starting test email send", {
+      to,
+      publicUrl,
+      managementUrl,
+    });
+
+    const smtpResponse = await mailerTransporter.sendMail({
+      from: managementEmailFrom,
+      to,
+      subject: "Twoj Bazar – test wysyłki email",
+      text: [
+        "To jest testowa wiadomość z Twoj Bazar.",
+        "",
+        "Link do ogłoszenia:",
+        publicUrl,
+        "",
+        "Link do zarządzania ogłoszeniem:",
+        managementUrl,
+      ].join("\n"),
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6;">
+          <h2 style="margin: 0 0 16px; color: #111827;">Twoj Bazar</h2>
+          <p>To jest testowa wiadomość z Twoj Bazar.</p>
+          <p><strong>Link do ogłoszenia:</strong><br><a href="${escapeHtml(publicUrl)}">${escapeHtml(publicUrl)}</a></p>
+          <p><strong>Link do zarządzania ogłoszeniem:</strong><br><a href="${escapeHtml(managementUrl)}">${escapeHtml(managementUrl)}</a></p>
+        </div>
+      `.trim(),
+    });
+
+    console.log("[Mail] Test SMTP send success", {
+      to,
+      messageId: smtpResponse?.messageId || null,
+      accepted: smtpResponse?.accepted || [],
+      rejected: smtpResponse?.rejected || [],
+      response: smtpResponse?.response || null,
+    });
+
+    return res.json({
+      status: "sent",
+      to,
+      messageId: smtpResponse?.messageId || null,
+      accepted: smtpResponse?.accepted || [],
+      rejected: smtpResponse?.rejected || [],
+      response: smtpResponse?.response || null,
+    });
+  } catch (error) {
+    console.error("[Mail] Test email send failed", {
+      to,
+      message: error?.message,
+      code: error?.code,
+      command: error?.command,
+      response: error?.response,
+      responseCode: error?.responseCode,
+      stack: error?.stack,
+    });
+
+    return res.status(500).json({
+      status: "failed",
+      error: error?.message || "Nie udało się wysłać testowego maila.",
+      code: error?.code || null,
+      response: error?.response || null,
+      responseCode: error?.responseCode || null,
+    });
+  }
 });
 
 app.post("/api/listings", listingUpload, async (req, res) => {
@@ -699,7 +874,15 @@ app.post("/api/listings", listingUpload, async (req, res) => {
       } catch (emailError) {
         console.error("[Listings] Failed to send management email", {
           listingId: listing.id,
+          to: listing.email,
+          publicUrl: getPublicListingUrl(req, listing.id),
+          managementUrl,
           message: emailError?.message,
+          code: emailError?.code,
+          command: emailError?.command,
+          response: emailError?.response,
+          responseCode: emailError?.responseCode,
+          stack: emailError?.stack,
         });
 
         emailDeliveryStatus = {

@@ -62,8 +62,9 @@ if (menuToggle && navLinks) {
 function getApiCandidates(path) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const candidates = [];
+  const isLocalHost = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 
-  if (window.location.protocol.startsWith("http")) {
+  if (isLocalHost && window.location.protocol.startsWith("http")) {
     candidates.push(normalizedPath);
   }
 
