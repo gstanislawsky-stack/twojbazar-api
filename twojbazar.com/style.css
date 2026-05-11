@@ -1643,7 +1643,8 @@ main {
   gap: 8px;
 }
 
-.form-field label {
+.form-field label,
+.field-label {
   font-size: 0.96rem;
   font-weight: 700;
 }
@@ -1686,6 +1687,47 @@ main {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+.category-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.category-choice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(20, 33, 36, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.category-choice:hover,
+.category-choice:focus-visible {
+  border-color: rgba(15, 118, 110, 0.28);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.08);
+  outline: 0;
+  transform: translateY(-1px);
+}
+
+.category-choice.selected {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--primary), #18a999);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.18);
+}
+
 .file-upload-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1721,9 +1763,14 @@ main {
 
 .form-field.invalid input,
 .form-field.invalid select,
-.form-field.invalid textarea {
+.form-field.invalid textarea,
+.form-field.invalid .category-choice-grid {
   border-color: rgba(180, 35, 24, 0.4);
   box-shadow: 0 0 0 4px rgba(180, 35, 24, 0.08);
+}
+
+.form-field.invalid .category-choice:not(.selected) {
+  border-color: rgba(180, 35, 24, 0.32);
 }
 
 .form-field.invalid .field-error {
@@ -4009,6 +4056,10 @@ body {
   .subpage-main {
     margin-top: 20px;
   }
+
+  .category-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* final-navbar-floating-polish */
@@ -4059,6 +4110,10 @@ body {
   .subpage-main {
     margin-top: 0;
   }
+
+  .add-listing-layout {
+    padding-top: 18px;
+  }
 }
 
 @media (max-width: 820px) {
@@ -4075,5 +4130,21 @@ body {
   .hero,
   .subpage-main {
     margin-top: 0;
+  }
+
+  .add-listing-layout {
+    padding-top: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .category-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .category-choice {
+    justify-content: flex-start;
+    min-height: 46px;
+    text-align: left;
   }
 }
