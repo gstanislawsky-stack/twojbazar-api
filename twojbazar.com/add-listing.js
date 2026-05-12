@@ -49,7 +49,6 @@ const featuresList = document.getElementById("featuresList");
 const featuresDataInput = document.getElementById("featuresData");
 const titleInput = document.getElementById("title");
 const categorySelect = document.getElementById("category");
-const categoryButtons = [...document.querySelectorAll(".category-choice[data-category]")];
 const countrySelect = document.getElementById("country");
 const priceInput = document.getElementById("price");
 const priceHint = document.getElementById("priceHint");
@@ -65,10 +64,10 @@ const aiQuickStartSection = document.getElementById("ai-quick-start");
 const CATEGORY_OPTIONS = [
   "Praca dam",
   "Praca szukam",
-  "Mieszkanie wynajmę",
-  "Mieszkanie szukam",
   "Pokój wynajmę",
   "Pokój szukam",
+  "Mieszkanie wynajmę",
+  "Mieszkanie szukam",
   "Usługi oferuję",
   "Usługi szukam",
   "Sprzedam",
@@ -316,21 +315,13 @@ function updatePriceField() {
 
 function setCategoryValue(value, options = {}) {
   const normalizedCategory = normalizeSpaces(value);
-  const matchingButton = categoryButtons.find((button) => {
-    return button.dataset.category === normalizedCategory ||
-      normalizeCategoryKey(button.dataset.category || "") === normalizeCategoryKey(normalizedCategory);
+  const directMatch = CATEGORY_OPTIONS.find((category) => {
+    return category === normalizedCategory || normalizeCategoryKey(category) === normalizeCategoryKey(normalizedCategory);
   });
-  const selectedCategory = matchingButton?.dataset.category || normalizedCategory;
 
   if (categorySelect) {
-    categorySelect.value = selectedCategory;
+    categorySelect.value = directMatch || normalizedCategory;
   }
-
-  categoryButtons.forEach((button) => {
-    const isSelected = button === matchingButton;
-    button.classList.toggle("selected", isSelected);
-    button.setAttribute("aria-pressed", String(isSelected));
-  });
 
   if (options.validate && categorySelect) {
     validateField(categorySelect);
@@ -662,18 +653,8 @@ if (countrySelect) {
   countrySelect.addEventListener("change", updatePriceField);
 }
 
-categoryButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    setCategoryValue(button.dataset.category || "", { validate: true });
-    setStatus(formStatus, "", "");
-  });
-});
-
 if (form) {
   const fields = [...form.querySelectorAll("input:not([type='file']):not([type='hidden']), select, textarea")];
-  if (categorySelect && !fields.includes(categorySelect)) {
-    fields.splice(Math.min(1, fields.length), 0, categorySelect);
-  }
 
   fields.forEach((field) => {
     const eventName = field.tagName === "SELECT" ? "change" : "input";

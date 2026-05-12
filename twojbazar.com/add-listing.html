@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Dodaj nowe ogłoszenie w Twoj Bazar.">
   <title>Dodaj ogłoszenie | Twoj Bazar</title>
-  <link rel="stylesheet" href="style.css?v=20260512-1">
+  <link rel="stylesheet" href="style.css?v=20260512-2">
 </head>
 <body>
   <div class="page-shell">
@@ -86,24 +86,24 @@
 
             <div class="form-row">
               <div class="form-field" data-field="category">
-                <span class="field-label">Kategoria</span>
-                <input id="category" name="category" type="hidden">
-                <div class="category-choice-grid" role="radiogroup" aria-label="Kategoria ogłoszenia">
-                  <button type="button" class="category-choice" data-category="Praca dam" aria-pressed="false">Praca dam</button>
-                  <button type="button" class="category-choice" data-category="Praca szukam" aria-pressed="false">Praca szukam</button>
-                  <button type="button" class="category-choice" data-category="Pokój wynajmę" aria-pressed="false">Pokój wynajmę</button>
-                  <button type="button" class="category-choice" data-category="Pokój szukam" aria-pressed="false">Pokój szukam</button>
-                  <button type="button" class="category-choice" data-category="Mieszkanie wynajmę" aria-pressed="false">Mieszkanie wynajmę</button>
-                  <button type="button" class="category-choice" data-category="Mieszkanie szukam" aria-pressed="false">Mieszkanie szukam</button>
-                  <button type="button" class="category-choice" data-category="Usługi oferuję" aria-pressed="false">Usługi oferuję</button>
-                  <button type="button" class="category-choice" data-category="Usługi szukam" aria-pressed="false">Usługi szukam</button>
-                  <button type="button" class="category-choice" data-category="Sprzedam" aria-pressed="false">Sprzedam</button>
-                  <button type="button" class="category-choice" data-category="Kupię" aria-pressed="false">Kupię</button>
-                  <button type="button" class="category-choice" data-category="Transport" aria-pressed="false">Transport</button>
-                  <button type="button" class="category-choice" data-category="Pomoc / formalności" aria-pressed="false">Pomoc / formalności</button>
-                  <button type="button" class="category-choice" data-category="Poznam ludzi" aria-pressed="false">Poznam ludzi</button>
-                  <button type="button" class="category-choice" data-category="Inne" aria-pressed="false">Inne</button>
-                </div>
+                <label for="category">Kategoria</label>
+                <select id="category" name="category">
+                  <option value="">Wybierz kategorię</option>
+                  <option value="Praca dam">Praca dam</option>
+                  <option value="Praca szukam">Praca szukam</option>
+                  <option value="Pokój wynajmę">Pokój wynajmę</option>
+                  <option value="Pokój szukam">Pokój szukam</option>
+                  <option value="Mieszkanie wynajmę">Mieszkanie wynajmę</option>
+                  <option value="Mieszkanie szukam">Mieszkanie szukam</option>
+                  <option value="Usługi oferuję">Usługi oferuję</option>
+                  <option value="Usługi szukam">Usługi szukam</option>
+                  <option value="Sprzedam">Sprzedam</option>
+                  <option value="Kupię">Kupię</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Pomoc / formalności">Pomoc / formalności</option>
+                  <option value="Poznam ludzi">Poznam ludzi</option>
+                  <option value="Inne">Inne</option>
+                </select>
                 <span class="field-hint">Wybierz jedną kategorię.</span>
               </div>
 
