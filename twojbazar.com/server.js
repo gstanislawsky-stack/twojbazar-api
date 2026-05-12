@@ -12,6 +12,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set("trust proxy", 1);
+
 const port = Number(process.env.PORT || 3000);
 const model = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const dataDirPath = path.resolve(normalizeString(process.env.DATA_DIR) || __dirname);
@@ -51,6 +53,15 @@ const allowedOrigins = new Set([
   "https://www.twojbazar.com",
   "http://www.twojbazar.com",
 ]);
+const rateLimitBuckets = new Map();
+const rateLimitWindowMs = Math.max(60_000, Number(process.env.RATE_LIMIT_WINDOW_MS || 10 * 60 * 1000));
+const listingRateLimitMax = Math.max(1, Number(process.env.LISTING_RATE_LIMIT_MAX || 5));
+const aiRateLimitMax = Math.max(1, Number(process.env.AI_RATE_LIMIT_MAX || 12));
+const moderationRateLimitMax = Math.max(1, Number(process.env.MODERATION_RATE_LIMIT_MAX || 30));
+const minFormAgeMs = Math.max(0, Number(process.env.MIN_FORM_AGE_MS || 3000));
+const maxFormAgeMs = Math.max(minFormAgeMs + 1000, Number(process.env.MAX_FORM_AGE_MS || 24 * 60 * 60 * 1000));
+const botProtectionFields = ["website", "company", "homepage", "url", "contactUrl", "_gotcha"];
+const formTimingFields = ["formStartedAt", "startedAt", "formRenderedAt"];
 
 if (!process.env.OPENAI_API_KEY) {
   console.warn("Missing OPENAI_API_KEY. The AI endpoint will return an error until it is configured.");
@@ -155,6 +166,115 @@ function normalizeBoolean(value) {
   const normalizedValue = normalizeString(value).toLowerCase();
   return normalizedValue === "true" || normalizedValue === "1" || normalizedValue === "yes" || normalizedValue === "on";
 }
+
+function getClientKey(req) {
+  const forwardedFor = normalizeString(req.headers["x-forwarded-for"]).split(",")[0];
+  return normalizeString(req.ip) || forwardedFor || normalizeString(req.socket?.remoteAddress) || "unknown";
+}
+
+function cleanupRateLimitBuckets(now) {
+  for (const [key, bucket] of rateLimitBuckets.entries()) {
+    if (bucket.resetAt <= now) {
+      rateLimitBuckets.delete(key);
+    }
+  }
+}
+
+function createRateLimit({ name, max, windowMs }) {
+  return (req, res, next) => {
+    const now = Date.now();
+    cleanupRateLimitBuckets(now);
+
+    const key = `${name}:${getClientKey(req)}`;
+    const currentBucket = rateLimitBuckets.get(key);
+    const bucket =
+      currentBucket && currentBucket.resetAt > now
+        ? currentBucket
+        : {
+            count: 0,
+            resetAt: now + windowMs,
+          };
+
+    bucket.count += 1;
+    rateLimitBuckets.set(key, bucket);
+
+    if (bucket.count > max) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
+      res.setHeader("Retry-After", String(retryAfterSeconds));
+      return res.status(429).json({
+        error: "Za duzo prob z tego adresu. Sprobuj ponownie za kilka minut.",
+      });
+    }
+
+    next();
+  };
+}
+
+function rejectHoneypotSubmission(req, res, next) {
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const botField = botProtectionFields.find((field) => normalizeString(body[field]));
+
+  if (botField) {
+    console.warn("[Security] Honeypot field filled", {
+      field: botField,
+      ip: getClientKey(req),
+    });
+
+    return res.status(400).json({
+      error: "Nie udalo sie zapisac ogloszenia.",
+    });
+  }
+
+  next();
+}
+
+function rejectSuspiciousFormTiming(req, res, next) {
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const rawStartedAt = formTimingFields.map((field) => body[field]).find((value) => normalizeString(value));
+
+  if (!rawStartedAt) {
+    return next();
+  }
+
+  const parsedStartedAt = Number(rawStartedAt);
+  const startedAt = Number.isFinite(parsedStartedAt) ? parsedStartedAt : Date.parse(normalizeString(rawStartedAt));
+  const ageMs = Date.now() - startedAt;
+
+  if (!Number.isFinite(startedAt) || ageMs < minFormAgeMs || ageMs > maxFormAgeMs) {
+    console.warn("[Security] Suspicious form timing", {
+      ageMs,
+      ip: getClientKey(req),
+    });
+
+    return res.status(400).json({
+      error: "Formularz zostal wyslany zbyt szybko. Odswiez strone i sprobuj ponownie.",
+    });
+  }
+
+  next();
+}
+
+function stripBotProtectionFields(payload) {
+  for (const field of [...botProtectionFields, ...formTimingFields]) {
+    delete payload[field];
+  }
+}
+
+const listingRateLimit = createRateLimit({
+  name: "listings",
+  max: listingRateLimitMax,
+  windowMs: rateLimitWindowMs,
+});
+const aiRateLimit = createRateLimit({
+  name: "ai",
+  max: aiRateLimitMax,
+  windowMs: rateLimitWindowMs,
+});
+const moderationRateLimit = createRateLimit({
+  name: "moderation",
+  max: moderationRateLimitMax,
+  windowMs: rateLimitWindowMs,
+});
 
 function normalizeCategoryKey(value) {
   return normalizeString(value)
@@ -661,6 +781,13 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  next();
+});
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
@@ -822,7 +949,7 @@ app.get("/api/test-email", async (req, res) => {
   }
 });
 
-app.post("/api/listings", listingUpload, async (req, res) => {
+app.post("/api/listings", listingRateLimit, listingUpload, rejectHoneypotSubmission, rejectSuspiciousFormTiming, async (req, res) => {
   try {
     const payload = req.body && typeof req.body === "object" ? { ...req.body } : {};
     const uploadedImages = [
@@ -834,6 +961,8 @@ app.post("/api/listings", listingUpload, async (req, res) => {
       payload.image = uploadedImages[0];
       payload.images = uploadedImages;
     }
+
+    stripBotProtectionFields(payload);
 
     const { listing: normalizedPayload, errors } = validateListingPayload(payload, { requireId: false });
 
@@ -1313,9 +1442,9 @@ async function handleModerateListing(req, res) {
   }
 }
 
-app.post("/api/generate-description", aiUpload.single("image"), handleGenerateDescription);
-app.post("/api/listings/generate-from-image", aiUpload.single("image"), handleGenerateDescription);
-app.post("/api/moderate-listing", handleModerateListing);
+app.post("/api/generate-description", aiRateLimit, aiUpload.single("image"), handleGenerateDescription);
+app.post("/api/listings/generate-from-image", aiRateLimit, aiUpload.single("image"), handleGenerateDescription);
+app.post("/api/moderate-listing", moderationRateLimit, handleModerateListing);
 
 app.use((error, _req, res, _next) => {
   if (error instanceof multer.MulterError) {
