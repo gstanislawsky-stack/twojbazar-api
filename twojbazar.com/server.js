@@ -86,6 +86,7 @@ function createMailerTransporter() {
 
 const mailerTransporter = createMailerTransporter();
 const publicSiteUrl = normalizeString(process.env.PUBLIC_SITE_URL).replace(/\/+$/, "");
+const publicApiUrl = normalizeString(process.env.PUBLIC_API_URL).replace(/\/+$/, "");
 const managementEmailFrom =
   normalizeString(process.env.SMTP_FROM) ||
   normalizeString(process.env.MANAGEMENT_EMAIL_FROM) ||
@@ -369,7 +370,8 @@ function resolveAssetUrl(req, assetPath) {
     return normalizedPath;
   }
 
-  return `${getBaseUrl(req)}${normalizedPath}`;
+  const apiBaseUrl = publicApiUrl || `${req.protocol}://${req.get("host")}`;
+  return `${apiBaseUrl}${normalizedPath}`;
 }
 
 function serializePublicListing(req, listing) {
