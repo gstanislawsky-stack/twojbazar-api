@@ -760,7 +760,7 @@ if (form) {
       if (publicUrl && managementUrl) {
         setStatusHtml(
           formStatus,
-          `Ogłoszenie zostało zapisane, ale mail nie został potwierdzony. Zachowaj linki poniżej:<br><a href="${escapeHtml(publicUrl)}">Zobacz ogłoszenie</a><br><a href="${escapeHtml(managementUrl)}">Zarządzaj ogłoszeniem</a>`,
+          `Ogłoszenie zostało zapisane, ale e-mail z linkami nie został wysłany. Zachowaj linki poniżej:<br><a href="${escapeHtml(publicUrl)}">Zobacz ogłoszenie</a><br><a href="${escapeHtml(managementUrl)}">Zarządzaj ogłoszeniem</a>`,
           "success"
         );
         return;
