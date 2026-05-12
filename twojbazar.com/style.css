@@ -1643,6 +1643,10 @@ main {
   gap: 8px;
 }
 
+.form-field[data-field="category"] {
+  grid-column: 1 / -1;
+}
+
 .form-field label,
 .field-label {
   font-size: 0.96rem;
@@ -1689,7 +1693,7 @@ main {
 
 .category-choice-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -4058,7 +4062,7 @@ body {
   }
 
   .category-choice-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -4139,12 +4143,12 @@ body {
 
 @media (max-width: 420px) {
   .category-choice-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .category-choice {
-    justify-content: flex-start;
     min-height: 46px;
-    text-align: left;
+    padding-inline: 10px;
+    font-size: 0.88rem;
   }
 }
