@@ -4152,3 +4152,67 @@ body {
     font-size: 0.88rem;
   }
 }
+
+/* final-add-listing-category-buttons */
+.form-field[data-field="category"] .category-choice-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(120px, 1fr)) !important;
+  gap: 10px !important;
+  width: 100% !important;
+  margin-top: 2px !important;
+}
+
+.form-field[data-field="category"] .category-choice {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 48px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f5f7fb !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  font-size: 0.92rem !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  cursor: pointer !important;
+}
+
+.form-field[data-field="category"] .category-choice:hover,
+.form-field[data-field="category"] .category-choice:focus-visible {
+  border-color: rgba(111, 147, 255, 0.5) !important;
+  background: rgba(111, 147, 255, 0.18) !important;
+  outline: none !important;
+}
+
+.form-field[data-field="category"] .category-choice.selected {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #ff7a1a, #ff9a5a) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(255, 122, 26, 0.24) !important;
+}
+
+@media (max-width: 820px) {
+  .form-field[data-field="category"] .category-choice-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .form-field[data-field="category"] .category-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .form-field[data-field="category"] .category-choice {
+    min-height: 46px !important;
+    padding: 9px 10px !important;
+    font-size: 0.86rem !important;
+  }
+}
