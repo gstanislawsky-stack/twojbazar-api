@@ -1034,6 +1034,7 @@ app.post("/api/listings", listingRateLimit, listingUpload, rejectHoneypotSubmiss
 
     return res.status(201).json({
       ...serializeManagedListing(req, listing),
+      emailDelivery: emailDeliveryStatus,
       emailDeliveryStatus,
     });
   } catch (error) {
