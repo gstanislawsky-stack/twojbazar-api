@@ -496,8 +496,13 @@ function resolveAssetUrl(req, assetPath) {
 
 function serializePublicListing(req, listing) {
   const { managementToken, ...publicListing } = normalizeListing(listing);
+  const shouldShowPhone = Boolean(publicListing.showPhone && publicListing.phone);
+  const shouldShowEmail = Boolean(publicListing.showEmail && publicListing.email);
+
   return {
     ...publicListing,
+    phone: shouldShowPhone ? publicListing.phone : "",
+    email: shouldShowEmail ? publicListing.email : "",
     image: resolveAssetUrl(req, publicListing.image),
     images: Array.isArray(publicListing.images) ? publicListing.images.map((item) => resolveAssetUrl(req, item)).filter(Boolean) : [],
   };
@@ -526,8 +531,14 @@ function getPublicListingUrl(req, listingId) {
 }
 
 function serializeManagedListing(req, listing) {
+  const normalizedListing = normalizeListing(listing);
+
   return {
     ...serializePublicListing(req, listing),
+    phone: normalizedListing.phone,
+    email: normalizedListing.email,
+    showPhone: normalizedListing.showPhone,
+    showEmail: normalizedListing.showEmail,
     publicUrl: getPublicListingUrl(req, listing.id),
     manageUrl: getManagementUrl(req, listing.managementToken),
     managementUrl: getManagementUrl(req, listing.managementToken),
